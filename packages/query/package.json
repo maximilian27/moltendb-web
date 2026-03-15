@@ -1,0 +1,29 @@
+{
+  "name": "@moltendb/query",
+  "version": "0.1.0",
+  "description": "Type-safe query builder for MoltenDB — chainable API for get, set, update and delete operations.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json && node scripts/build-esm.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "keywords": ["moltendb", "database", "query-builder", "nosql", "wasm"],
+  "license": "MIT OR Apache-2.0",
+  "devDependencies": {
+    "typescript": "^6.0.1-rc"
+  }
+}

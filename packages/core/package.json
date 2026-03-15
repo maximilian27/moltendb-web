@@ -1,0 +1,45 @@
+{
+  "name": "@moltendb/core",
+  "version": "0.1.0-alpha.1",
+  "description": "MoltenDB WASM runtime — the database engine, Web Worker, and main-thread client in one package.",
+  "type": "module",
+  "author": "Maximilian Both <maximilian.both27@outlook.com>",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maximilian27/MoltenDB"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./worker": "./dist/moltendb-worker.js",
+    "./wasm": "./dist/moltendb.js",
+    "./wasm-bg": "./dist/moltendb_bg.wasm"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.1-rc"
+  },
+  "keywords": [
+    "database",
+    "wasm",
+    "webassembly",
+    "nosql",
+    "local-first",
+    "opfs",
+    "indexeddb",
+    "embedded"
+  ]
+}
