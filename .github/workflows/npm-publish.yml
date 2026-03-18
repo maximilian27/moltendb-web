@@ -1,0 +1,62 @@
+name: Publish Monorepo to NPM
+
+# Trigger every time your Rust repo syncs to this repo's master branch
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish Core and Query
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PACKAGES=("core" "query")
+          
+          for PKG in "${PACKAGES[@]}"; do
+            echo "====================================="
+            echo "🚀 Processing $PKG directory"
+            echo "====================================="
+          
+            cd packages/$PKG
+            npm install
+          
+            # 1. Dynamically extract the exact package name from package.json
+            PKG_NAME=$(node -p "require('./package.json').name")
+            echo "📦 Package Name: $PKG_NAME"
+          
+            # 2. Extract local version
+            LOCAL_VERSION=$(node -p "require('./package.json').version")
+            echo "Local version: $LOCAL_VERSION"
+          
+            # 3. Extract live NPM version using the dynamic name
+            NPM_VERSION=$(npm view "$PKG_NAME" version 2>/dev/null || echo "0.0.0")
+            echo "NPM version: $NPM_VERSION"
+          
+            # 4. Compare versions
+            if [ "$LOCAL_VERSION" == "$NPM_VERSION" ]; then
+              echo "⚠️ Version $LOCAL_VERSION is already on NPM. Skipping publish for $PKG_NAME."
+            else
+              if [[ "$LOCAL_VERSION" == *"alpha"* ]]; then
+                echo "🚀 Alpha release detected. Publishing to NPM with the 'next' tag..."
+                npm publish --access public --tag next
+              else
+                echo "🚀 Stable release detected. Publishing to NPM as 'latest'..."
+                npm publish --access public
+              fi
+            fi
+          
+            cd ../..
+          done
