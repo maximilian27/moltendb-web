@@ -1,4 +1,4 @@
-# @moltendb/query
+# @moltendb-web/query
 
 Type-safe, chainable query builder for [MoltenDB](https://github.com/maximilian27/MoltenDB).
 
@@ -9,7 +9,7 @@ Works in vanilla JavaScript and TypeScript. Compiles as an npm module (CJS + ESM
 ## Installation
 
 ```bash
-npm install @moltendb/query
+npm install @moltendb-web/query
 ```
 
 ---
@@ -17,7 +17,7 @@ npm install @moltendb/query
 ## Quick start
 
 ```ts
-import { MoltenDBClient, WorkerTransport } from '@moltendb/query';
+import { MoltenDBClient, WorkerTransport } from '@moltendb-web/query';
 
 // Connect to a MoltenDB WASM Web Worker
 const worker = new Worker('./moltendb-worker.js', { type: 'module' });
@@ -172,7 +172,7 @@ await db.collection('laptops')
 Implement `MoltenTransport` to connect to any backend:
 
 ```ts
-import { MoltenTransport, MoltenDBClient, Document, JsonValue } from '@moltendb/query';
+import { MoltenTransport, MoltenDBClient, Document, JsonValue } from '@moltendb-web/query';
 
 class FetchTransport implements MoltenTransport {
   constructor(private baseUrl: string, private token: string) {}

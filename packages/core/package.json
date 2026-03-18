@@ -1,5 +1,5 @@
 {
-  "name": "@moltendb/core",
+  "name": "@moltendb-web/core",
   "version": "0.1.0-alpha.8",
   "description": "MoltenDB WASM runtime — the database engine, Web Worker, and main-thread client in one package.",
   "type": "module",
