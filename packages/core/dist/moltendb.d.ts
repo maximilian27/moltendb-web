@@ -86,9 +86,9 @@ export interface InitOutput {
     readonly workerdb_analytics: (a: number, b: number, c: number, d: number) => void;
     readonly workerdb_handle_message: (a: number, b: number, c: number) => void;
     readonly workerdb_new: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_3601: (a: number, b: number) => void;
-    readonly __wasm_bindgen_func_elem_3680: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3691: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3598: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3677: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3690: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;
