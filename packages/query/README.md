@@ -4,6 +4,10 @@ Type-safe, chainable query builder for [MoltenDB](https://github.com/maximilian2
 
 Works in vanilla JavaScript and TypeScript. Compiles as an npm module (CJS + ESM + `.d.ts`).
 
+### 🌋 Explore the Full Functionality
+
+The best way to experience the MoltenDB query builder is through our **[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)**. It contains a complete, live environment where you can test query builder expressions, perform mutations, and see real-time events without any local setup.
+
 ---
 
 ## Installation
@@ -17,14 +21,26 @@ npm install @moltendb-web/query
 ## Quick start
 
 ```ts
+import { MoltenDB } from '@moltendb-web/core';
 import { MoltenDBClient, WorkerTransport } from '@moltendb-web/query';
 
-// Connect to a MoltenDB WASM Web Worker
-const worker = new Worker('./moltendb-worker.js', { type: 'module' });
-const db = new MoltenDBClient(new WorkerTransport(worker));
+// 1. Initialize the Core Engine (boots WASM worker)
+const workerUrl = new URL('@moltendb-web/core/worker', import.meta.url).href;
+const db = new MoltenDB('moltendb_demo', { syncEnabled: false, workerUrl });
+await db.init();
+
+// 2. Connect the Query Builder to the worker
+const client = new MoltenDBClient(new WorkerTransport(db.worker, 10000));
+// SET — insert / upsert
+await client.collection('laptops')
+    .set({
+        lp1: { brand: 'Lenovo', model: 'ThinkPad X1', price: 1499, in_stock: true },
+        lp2: { brand: 'Apple',  model: 'MacBook Pro',  price: 3499, in_stock: true },
+    })
+    .exec();
 
 // GET — query with WHERE, field projection, sort and pagination
-const results = await db.collection('laptops')
+const results = await client.collection('laptops')
   .get()
   .where({ brand: 'Apple' })
   .fields(['brand', 'model', 'price'])
@@ -32,27 +48,19 @@ const results = await db.collection('laptops')
   .count(5)
   .exec();
 
-// SET — insert / upsert
-await db.collection('laptops')
-  .set({
-    lp1: { brand: 'Lenovo', model: 'ThinkPad X1', price: 1499, in_stock: true },
-    lp2: { brand: 'Apple',  model: 'MacBook Pro',  price: 3499, in_stock: true },
-  })
-  .exec();
-
 // UPDATE — partial patch (only listed fields are changed)
-await db.collection('laptops')
-  .update({ lp4: { price: 1749, in_stock: true } })
+await client.collection('laptops')
+  .update({ lp1: { price: 1749, in_stock: false } })
   .exec();
 
 // DELETE — single key
-await db.collection('laptops').delete().keys('lp6').exec();
+await client.collection('laptops').delete().keys('lp1').exec();
 
 // DELETE — batch
-await db.collection('laptops').delete().keys(['lp4', 'lp5']).exec();
+await client.collection('laptops').delete().keys(['lp1', 'lp2']).exec();
 
 // DELETE — drop entire collection
-await db.collection('laptops').delete().drop().exec();
+await client.collection('laptops').delete().drop().exec();
 ```
 
 ---
@@ -67,7 +75,7 @@ combinations are caught at compile time by TypeScript.
 | Method | Description |
 |---|---|
 | `.keys(key \| key[])` | Fetch one or more documents by key |
-| `.where(clause)` | Filter with operators: `$eq $ne $gt $gte $lt $lte $in $nin $contains` |
+| `.where(clause)` | Filter with operators: `$eq $ne $gt $gte $lt $lte $in $nin $contains` (and aliases) |
 | `.fields(string[])` | Return only these fields (dot-notation supported) |
 | `.excludedFields(string[])` | Return everything except these fields |
 | `.joins(JoinSpec[])` | Embed related documents from other collections |
@@ -110,22 +118,29 @@ Only the fields present in each patch object are updated — all other fields ar
 ## WHERE operators
 
 ```ts
-// Exact equality (implicit)
+// Exact equality (implicit or explicit)
 .where({ brand: 'Apple' })
+.where({ brand: { $eq: 'Apple' } })
+.where({ brand: { $equals: 'Apple' } }) // alias
 
 // Comparison
 .where({ price: { $gt: 1000, $lt: 3000 } })
+.where({ price: { $greaterThan: 1000, $lessThan: 3000 } }) // aliases
 .where({ 'specs.cpu.cores': { $gte: 12 } })
 
 // Not equal
 .where({ 'specs.cpu.brand': { $ne: 'Intel' } })
+.where({ 'specs.cpu.brand': { $notEquals: 'Intel' } }) // alias
 
 // In / not-in list
 .where({ brand: { $in: ['Apple', 'Dell'] } })
+.where({ brand: { $oneOf: ['Apple', 'Dell'] } }) // alias
 .where({ brand: { $nin: ['Framework'] } })
+.where({ brand: { $notIn: ['Framework'] } }) // alias
 
 // Contains (string substring or array element)
 .where({ model: { $contains: 'Pro' } })
+.where({ model: { $ct: 'Pro' } }) // alias
 .where({ tags:  { $contains: 'gaming' } })
 
 // Multiple conditions (implicit AND)
@@ -137,7 +152,7 @@ Only the fields present in each patch object are updated — all other fields ar
 ## Joins
 
 ```ts
-const results = await db.collection('laptops')
+const results = await client.collection('laptops')
   .get()
   .fields(['brand', 'model', 'price'])
   .joins([
@@ -153,7 +168,7 @@ const results = await db.collection('laptops')
 ## Extends (snapshot embedding at insert time)
 
 ```ts
-await db.collection('laptops')
+await client.collection('laptops')
   .set({
     lp7: {
       brand: 'MSI', model: 'Titan GT77', price: 3299,
@@ -164,6 +179,15 @@ await db.collection('laptops')
   .exec();
 // lp7 is stored with the full mem4 and dsp3 documents embedded inline.
 ```
+
+**When to use `extends` vs `joins`:**
+
+| | `extends` | `joins` |
+|---|---|---|
+| Resolved at | Insert time (once) | Query time (every request) |
+| Data freshness | Snapshot — may become stale | Always live |
+| Read cost | O(1) — data already embedded | O(1) per join per document |
+| Use when | Data rarely changes, fast reads matter | Data changes frequently, freshness matters |
 
 ---
 
@@ -198,7 +222,6 @@ const db = new MoltenDBClient(new FetchTransport('https://localhost:1538', myTok
 ## Build
 
 ```bash
-npm run build      # emit dist/index.js (CJS), dist/index.esm.js (ESM), dist/index.d.ts
 npm run typecheck  # type-check without emitting
 ```
 
