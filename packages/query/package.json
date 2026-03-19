@@ -5,6 +5,10 @@
   "main": "./dist/index.js",
   "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maximilian27/moltendb-web/tree/master/packages/query"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.esm.js",
