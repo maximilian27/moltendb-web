@@ -1,6 +1,10 @@
 {
   "name": "@moltendb/monorepo",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maximilian27/moltendb-web"
+  },
   "workspaces": [
     "packages/*"
   ]
