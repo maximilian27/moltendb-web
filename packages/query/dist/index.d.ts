@@ -346,7 +346,7 @@ export declare class CollectionHandle {
  *   .count(5)
  *   .exec();
  */
-export declare class MoltenDBQueryBuilder {
+export declare class MoltenDBClient {
     private transport;
     constructor(transport: MoltenTransport);
     /**
