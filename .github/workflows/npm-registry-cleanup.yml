@@ -19,8 +19,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "Moving latest tag to alpha.10..."
-          npm dist-tag add @moltendb-web/core@0.1.0-alpha.10 latest
+          echo "Moving latest tag to alpha.11..."
+          npm dist-tag add @moltendb-web/core@0.1.0-alpha.11 latest
           
-          echo "Nuking alpha.8..."
-          npm unpublish @moltendb-web/core@0.1.0-alpha.8
