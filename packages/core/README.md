@@ -1,7 +1,7 @@
 # MoltenDB Web
 
 <div align="center">
-  <img src="./dist/assets/logo.png" alt="MoltenDB Logo" width="64"/>
+  <img src="../../assets/logo.png" alt="MoltenDB Logo" width="64"/>
 
   ### 🌋 The Embedded Database for the Modern Web
   **High-performance Rust engine compiled to WASM. Persistent storage via OPFS.**
