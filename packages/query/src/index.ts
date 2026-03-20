@@ -564,7 +564,7 @@ export class CollectionHandle {
  *   .count(5)
  *   .exec();
  */
-export class MoltenDBQueryBuilder {
+export class MoltenDBClient {
   private transport: MoltenTransport;
 
   constructor(transport: MoltenTransport) {
@@ -581,3 +581,4 @@ export class MoltenDBQueryBuilder {
     return new CollectionHandle(this.transport, name);
   }
 }
+
