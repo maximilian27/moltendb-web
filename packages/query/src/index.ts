@@ -138,14 +138,23 @@ export class WorkerTransport implements MoltenTransport {
   private worker: Worker;
   private messageId: number;
   private pending = new Map<number, { resolve: (v: JsonValue) => void; reject: (e: Error) => void }>();
+  public onEvent?: (event: any) => void;
 
   constructor(worker: Worker, startId = 0) {
     this.messageId = startId;
     this.worker = worker;
     this.worker.addEventListener('message', (event: MessageEvent) => {
+      // 1. Intercept unsolicited broadcast events from the Rust core
+      if (event.data && event.data.type === 'event') {
+        if (this.onEvent) this.onEvent(event.data);
+        return; // Don't try to process this as a promise resolution
+      }
+
+      // 2. Standard request/response routing
       const { id, result, error } = event.data as { id: number; result?: JsonValue; error?: string };
       const p = this.pending.get(id);
       if (!p) return;
+
       this.pending.delete(id);
       if (error) p.reject(new Error(error));
       else p.resolve(result ?? null);
