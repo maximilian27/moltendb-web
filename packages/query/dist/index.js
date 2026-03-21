@@ -41,7 +41,7 @@
 //   await db.collection('laptops').delete().drop().exec();
 // ─────────────────────────────────────────────────────────────────────────────
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MoltenDBQueryBuilder = exports.CollectionHandle = exports.DeleteQuery = exports.UpdateQuery = exports.SetQuery = exports.GetQuery = exports.WorkerTransport = void 0;
+exports.MoltenDBClient = exports.CollectionHandle = exports.DeleteQuery = exports.UpdateQuery = exports.SetQuery = exports.GetQuery = exports.WorkerTransport = void 0;
 // ─── WorkerTransport ──────────────────────────────────────────────────────────
 /**
  * Default transport that communicates with a MoltenDB Web Worker.
@@ -56,6 +56,13 @@ class WorkerTransport {
         this.messageId = startId;
         this.worker = worker;
         this.worker.addEventListener('message', (event) => {
+            // 1. Intercept unsolicited broadcast events from the Rust core
+            if (event.data && event.data.type === 'event') {
+                if (this.onEvent)
+                    this.onEvent(event.data);
+                return; // Don't try to process this as a promise resolution
+            }
+            // 2. Standard request/response routing
             const { id, result, error } = event.data;
             const p = this.pending.get(id);
             if (!p)
@@ -436,7 +443,7 @@ exports.CollectionHandle = CollectionHandle;
  *   .count(5)
  *   .exec();
  */
-class MoltenDBQueryBuilder {
+class MoltenDBClient {
     constructor(transport) {
         this.transport = transport;
     }
@@ -450,5 +457,5 @@ class MoltenDBQueryBuilder {
         return new CollectionHandle(this.transport, name);
     }
 }
-exports.MoltenDBQueryBuilder = MoltenDBQueryBuilder;
+exports.MoltenDBClient = MoltenDBClient;
 //# sourceMappingURL=index.js.map

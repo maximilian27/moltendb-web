@@ -75,6 +75,7 @@ export declare class WorkerTransport implements MoltenTransport {
     private worker;
     private messageId;
     private pending;
+    onEvent?: (event: any) => void;
     constructor(worker: Worker, startId?: number);
     send(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
 }

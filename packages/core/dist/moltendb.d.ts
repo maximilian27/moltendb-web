@@ -76,6 +76,12 @@ export class WorkerDb {
      *   Each unique name is a separate database file in the browser's OPFS storage.
      */
     constructor(db_name: string);
+    /**
+     * Subscribe to real-time database changes.
+     * The provided JavaScript function will be called with a JSON string
+     * representing the mutation event.
+     */
+    subscribe(callback: Function): void;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -86,9 +92,10 @@ export interface InitOutput {
     readonly workerdb_analytics: (a: number, b: number, c: number, d: number) => void;
     readonly workerdb_handle_message: (a: number, b: number, c: number) => void;
     readonly workerdb_new: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_3598: (a: number, b: number) => void;
-    readonly __wasm_bindgen_func_elem_3677: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3690: (a: number, b: number, c: number, d: number) => void;
+    readonly workerdb_subscribe: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3624: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3703: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3716: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

@@ -39,6 +39,7 @@
 //   await db.collection('laptops').delete().keys(['lp4', 'lp5']).exec();
 //   await db.collection('laptops').delete().drop().exec();
 // ─────────────────────────────────────────────────────────────────────────────
+
 // ─── WorkerTransport ──────────────────────────────────────────────────────────
 /**
  * Default transport that communicates with a MoltenDB Web Worker.
@@ -47,12 +48,19 @@
  *   postMessage({ id, action, ...payload })
  *   onmessage → { id, result } | { id, error }
  */
-export class WorkerTransport {
+class WorkerTransport {
     constructor(worker, startId = 0) {
         this.pending = new Map();
         this.messageId = startId;
         this.worker = worker;
         this.worker.addEventListener('message', (event) => {
+            // 1. Intercept unsolicited broadcast events from the Rust core
+            if (event.data && event.data.type === 'event') {
+                if (this.onEvent)
+                    this.onEvent(event.data);
+                return; // Don't try to process this as a promise resolution
+            }
+            // 2. Standard request/response routing
             const { id, result, error } = event.data;
             const p = this.pending.get(id);
             if (!p)
@@ -72,6 +80,7 @@ export class WorkerTransport {
         });
     }
 }
+export { WorkerTransport as WorkerTransport };
 // ─── GetQuery ─────────────────────────────────────────────────────────────────
 /**
  * Builder for GET (read/query) operations.
@@ -88,7 +97,7 @@ export class WorkerTransport {
  *   .count(5)
  *   .exec();
  */
-export class GetQuery {
+class GetQuery {
     /** @internal */
     constructor(transport, collection) {
         this.transport = transport;
@@ -210,6 +219,7 @@ export class GetQuery {
         return this.transport.send('get', this.payload);
     }
 }
+export { GetQuery as GetQuery };
 // ─── SetQuery ─────────────────────────────────────────────────────────────────
 /**
  * Builder for SET (insert / upsert) operations.
@@ -224,7 +234,7 @@ export class GetQuery {
  *   })
  *   .exec();
  */
-export class SetQuery {
+class SetQuery {
     /** @internal */
     constructor(transport, collection, data) {
         this.transport = transport;
@@ -269,6 +279,7 @@ export class SetQuery {
         return this.transport.send('set', this.payload);
     }
 }
+export { SetQuery as SetQuery };
 // ─── UpdateQuery ──────────────────────────────────────────────────────────────
 /**
  * Builder for UPDATE (partial patch / merge) operations.
@@ -283,7 +294,7 @@ export class SetQuery {
  *   .update({ lp4: { price: 1749, in_stock: true } })
  *   .exec();
  */
-export class UpdateQuery {
+class UpdateQuery {
     /** @internal */
     constructor(transport, collection, data) {
         this.transport = transport;
@@ -298,6 +309,7 @@ export class UpdateQuery {
         return this.transport.send('update', this.payload);
     }
 }
+export { UpdateQuery as UpdateQuery };
 // ─── DeleteQuery ──────────────────────────────────────────────────────────────
 /**
  * Builder for DELETE operations.
@@ -314,7 +326,7 @@ export class UpdateQuery {
  * // Drop the entire collection
  * await db.collection('laptops').delete().drop().exec();
  */
-export class DeleteQuery {
+class DeleteQuery {
     /** @internal */
     constructor(transport, collection) {
         this.transport = transport;
@@ -351,13 +363,14 @@ export class DeleteQuery {
         return this.transport.send('delete', this.payload);
     }
 }
+export { DeleteQuery as DeleteQuery };
 // ─── CollectionHandle ─────────────────────────────────────────────────────────
 /**
  * A handle to a specific collection.
  * Returned by `MoltenDBClient.collection(name)`.
  * Use it to start any of the four operation builders.
  */
-export class CollectionHandle {
+class CollectionHandle {
     /** @internal */
     constructor(transport, collectionName) {
         this.transport = transport;
@@ -406,6 +419,7 @@ export class CollectionHandle {
         return new DeleteQuery(this.transport, this.collectionName);
     }
 }
+export { CollectionHandle as CollectionHandle };
 // ─── MoltenDBClient ───────────────────────────────────────────────────────────
 /**
  * The main entry point for the MoltenDB query builder.
@@ -427,7 +441,7 @@ export class CollectionHandle {
  *   .count(5)
  *   .exec();
  */
-export class MoltenDBClient {
+class MoltenDBClient {
     constructor(transport) {
         this.transport = transport;
     }
@@ -441,3 +455,5 @@ export class MoltenDBClient {
         return new CollectionHandle(this.transport, name);
     }
 }
+export { MoltenDBClient as MoltenDBClient };
+//# sourceMappingURL=index.js.map
