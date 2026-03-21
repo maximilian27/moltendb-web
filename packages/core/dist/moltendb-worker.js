@@ -1,4 +1,4 @@
-import init, { WorkerDb } from './pkg/moltendb.js';
+import init, { WorkerDb } from './moltendb.js';
 
 let db;
 
