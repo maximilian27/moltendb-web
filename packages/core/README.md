@@ -243,7 +243,7 @@ This monorepo contains the following packages:
 
 ## Roadmap
 
-- [ ] **Multi-Tab Sync:** Leader election for multiple tabs to share a single OPFS instance.
+- [ ] ~~**Multi-Tab Sync:** Leader election for multiple tabs to share a single OPFS instance.~~ ✅
 - [ ] **Delta Sync:** Automatic two-way sync with the MoltenDB Rust server.
 - [ ] **Analytics functionality:** Run analytics queries straight in the browser. 
 
@@ -256,6 +256,4 @@ MoltenDB is licensed under the **Business Source License 1.1**.
 
 For commercial licensing or questions: [maximilian.both27@outlook.com](mailto:maximilian.both27@outlook.com)
 
----
 
-Created with 🌋 by Maximilian Both. Coming to the world on the Equinox.
