@@ -28,6 +28,6 @@
   "keywords": ["moltendb", "database", "query-builder", "nosql", "wasm"],
   "license": "MIT OR Apache-2.0",
   "devDependencies": {
-    "typescript": "^6.0.1-rc"
+    "typescript": "^6.0.2"
   }
 }

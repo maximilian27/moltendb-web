@@ -18,7 +18,7 @@ export type SyncCallback = (update: {
 }) => void;
 export declare class MoltenDB {
     readonly dbName: string;
-    readonly workerUrl: string | URL;
+    readonly workerUrl?: string | URL;
     worker: Worker | null;
     private messageId;
     private pendingRequests;

@@ -20,8 +20,7 @@ export class MoltenDB {
     onEvent;
     constructor(dbName = 'moltendb', options = {}) {
         this.dbName = dbName;
-        // Zero-config default worker resolution
-        this.workerUrl = options.workerUrl ?? new URL('./moltendb-worker.js', import.meta.url).href;
+        this.workerUrl = options.workerUrl;
         this.syncEnabled = options.syncEnabled ?? false;
         this.serverUrl = options.serverUrl ?? 'wss://localhost:3000/ws';
         this.syncIntervalMs = options.syncIntervalMs ?? 5000;
@@ -57,7 +56,13 @@ export class MoltenDB {
         this.isLeader = true;
         if (this.worker)
             this.worker.terminate(); // Clean slate if promoted
-        this.worker = new Worker(this.workerUrl, { type: 'module', name: `moltendb-${this.dbName}-leader` });
+        // We must inline `new URL` directly inside `new Worker` so bundlers catch it!
+        if (this.workerUrl) {
+            this.worker = new Worker(this.workerUrl, { type: 'module', name: `moltendb-${this.dbName}-leader` });
+        }
+        else {
+            this.worker = new Worker(new URL('./moltendb-worker.js', import.meta.url), { type: 'module', name: `moltendb-${this.dbName}-leader` });
+        }
         // Handle messages strictly from our local Worker
         this.worker.onmessage = (e) => {
             const data = e.data;
@@ -83,7 +88,7 @@ export class MoltenDB {
         await new Promise((resolve, reject) => {
             const id = this.messageId++;
             this.pendingRequests.set(id, { resolve, reject });
-            this.worker.postMessage({ id, action: 'init', dbName: this.dbName, workerUrl: this.workerUrl });
+            this.worker.postMessage({ id, action: 'init', dbName: this.dbName });
         });
         // Listen to the BroadcastChannel for queries coming from Follower tabs
         this.bc.onmessage = async (e) => {
