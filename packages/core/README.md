@@ -50,7 +50,30 @@ npm install @moltendb-web/core
 # Install the chainable query builder
 npm install @moltendb-web/query
 ```
+📦 **Bundler Setup**
 
+MoltenDB handles its own Web Workers and WASM loading automatically. However, depending on your build tool, you may need a tiny config tweak to ensure it serves the static files correctly.
+
+**For Vite:**
+Exclude the core package from pre-bundling in your vite.config.js:
+
+```js
+// vite.config.js`
+export default defineConfig({
+  optimizeDeps: { exclude: ['@moltendb-web/core'] }
+});
+```
+
+**For Webpack 5 (Next.js, Create React App):**
+Ensure Webpack treats the `.wasm` binary as a static resource in `webpack.config.js`:
+
+```js
+module.exports = {
+  module: {
+    rules: [{ test: /\.wasm$/, type: 'asset/resource' }]
+  }
+};
+```
 ---
 
 # Quick Start
@@ -62,12 +85,11 @@ TypeScript
 import { MoltenDB } from '@moltendb-web/core';
 import { MoltenDBClient, WorkerTransport } from '@moltendb-web/query';
 
-const workerUrl = new URL('@moltendb-web/core/worker', import.meta.url).href;
-const db = new MoltenDB('moltendb_demo', { syncEnabled: false, workerUrl });
+const db = new MoltenDB('moltendb_demo');
 await db.init();
 
 // Connect the query builder to the WASM worker
-const client = new MoltenDBClient(new WorkerTransport(db.worker));
+const client = new MoltenDBClient(db);
 
 // 2. Insert and Query
 
