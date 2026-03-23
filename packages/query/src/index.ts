@@ -122,7 +122,7 @@ export type ExtendsMap = { [alias: string]: string };
  *   - A mock for testing
  */
 export interface MoltenTransport {
-  send(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
+  sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
 }
 
 // ─── WorkerTransport ──────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ export class WorkerTransport implements MoltenTransport {
     });
   }
 
-  send(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue> {
+  sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue> {
     return new Promise((resolve, reject) => {
       const id = this.messageId++;
       this.pending.set(id, { resolve, reject });
@@ -319,7 +319,7 @@ export class GetQuery {
    * Returns a single document for single-key lookups, or an array for all others.
    */
   exec(): Promise<JsonValue> {
-    return this.transport.send('get', this.payload);
+    return this.transport.sendMessage('get', this.payload);
   }
 }
 
@@ -385,7 +385,7 @@ export class SetQuery {
 
   /** Execute the insert/upsert and return `{ count, status }`. */
   exec(): Promise<JsonValue> {
-    return this.transport.send('set', this.payload);
+    return this.transport.sendMessage('set', this.payload);
   }
 }
 
@@ -421,7 +421,7 @@ export class UpdateQuery {
 
   /** Execute the patch and return `{ count, status }`. */
   exec(): Promise<JsonValue> {
-    return this.transport.send('update', this.payload);
+    return this.transport.sendMessage('update', this.payload);
   }
 }
 
@@ -483,7 +483,7 @@ export class DeleteQuery {
 
   /** Execute the delete and return `{ count, status }`. */
   exec(): Promise<JsonValue> {
-    return this.transport.send('delete', this.payload);
+    return this.transport.sendMessage('delete', this.payload);
   }
 }
 

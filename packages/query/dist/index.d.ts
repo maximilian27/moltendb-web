@@ -62,7 +62,7 @@ export type ExtendsMap = {
  *   - A mock for testing
  */
 export interface MoltenTransport {
-    send(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
+    sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
 }
 /**
  * Default transport that communicates with a MoltenDB Web Worker.
@@ -77,7 +77,7 @@ export declare class WorkerTransport implements MoltenTransport {
     private pending;
     onEvent?: (event: any) => void;
     constructor(worker: Worker, startId?: number);
-    send(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
+    sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
 }
 /**
  * Builder for GET (read/query) operations.

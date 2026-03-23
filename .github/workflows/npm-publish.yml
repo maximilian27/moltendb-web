@@ -49,13 +49,8 @@ jobs:
             if [ "$LOCAL_VERSION" == "$NPM_VERSION" ]; then
               echo "⚠️ Version $LOCAL_VERSION is already on NPM. Skipping publish for $PKG_NAME."
             else
-              if [[ "$LOCAL_VERSION" == *"alpha"* ]]; then
-                echo "🚀 Alpha release detected. Publishing to NPM with the 'next' tag..."
-                npm publish --access public --tag next
-              else
-                echo "🚀 Stable release detected. Publishing to NPM as 'latest'..."
-                npm publish --access public
-              fi
+              echo "🚀 Stable release detected. Publishing to NPM as 'latest'..."
+              npm publish --access public --tag latest
             fi
           
             cd ../..
