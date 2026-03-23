@@ -25,12 +25,12 @@ import { MoltenDB } from '@moltendb-web/core';
 import { MoltenDBClient, WorkerTransport } from '@moltendb-web/query';
 
 // 1. Initialize the Core Engine (boots WASM worker)
-const workerUrl = new URL('@moltendb-web/core/worker', import.meta.url).href;
-const db = new MoltenDB('moltendb_demo', { syncEnabled: false, workerUrl });
+const db = new MoltenDB('moltendb_demo');
 await db.init();
 
 // 2. Connect the Query Builder to the worker
-const client = new MoltenDBClient(new WorkerTransport(db.worker, 10000));
+const client = new MoltenDBClient(db);
+
 // SET — insert / upsert
 await client.collection('laptops')
     .set({
@@ -214,7 +214,7 @@ class FetchTransport implements MoltenTransport {
   }
 }
 
-const db = new MoltenDBClient(new FetchTransport('https://localhost:1538', myToken));
+const db = new MoltenDBClient(new FetchTransport('[https://api.mydomain.com](https://api.mydomain.com)', myToken));
 ```
 
 ---
@@ -222,7 +222,9 @@ const db = new MoltenDBClient(new FetchTransport('https://localhost:1538', myTok
 ## Build
 
 ```bash
-npm run typecheck  # type-check without emitting
+npm run build      # Builds CJS, ESM, and type declarations
+npm run typecheck  # Type-check without emitting
+npm run test       # Run the Jest test suite
 ```
 
 ---
