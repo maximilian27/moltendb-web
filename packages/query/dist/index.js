@@ -74,7 +74,7 @@ class WorkerTransport {
                 p.resolve(result ?? null);
         });
     }
-    send(action, payload) {
+    sendMessage(action, payload) {
         return new Promise((resolve, reject) => {
             const id = this.messageId++;
             this.pending.set(id, { resolve, reject });
@@ -218,7 +218,7 @@ class GetQuery {
      * Returns a single document for single-key lookups, or an array for all others.
      */
     exec() {
-        return this.transport.send('get', this.payload);
+        return this.transport.sendMessage('get', this.payload);
     }
 }
 exports.GetQuery = GetQuery;
@@ -278,7 +278,7 @@ class SetQuery {
     }
     /** Execute the insert/upsert and return `{ count, status }`. */
     exec() {
-        return this.transport.send('set', this.payload);
+        return this.transport.sendMessage('set', this.payload);
     }
 }
 exports.SetQuery = SetQuery;
@@ -308,7 +308,7 @@ class UpdateQuery {
     }
     /** Execute the patch and return `{ count, status }`. */
     exec() {
-        return this.transport.send('update', this.payload);
+        return this.transport.sendMessage('update', this.payload);
     }
 }
 exports.UpdateQuery = UpdateQuery;
@@ -362,7 +362,7 @@ class DeleteQuery {
     }
     /** Execute the delete and return `{ count, status }`. */
     exec() {
-        return this.transport.send('delete', this.payload);
+        return this.transport.sendMessage('delete', this.payload);
     }
 }
 exports.DeleteQuery = DeleteQuery;
