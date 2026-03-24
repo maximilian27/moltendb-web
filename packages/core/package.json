@@ -1,10 +1,10 @@
 {
   "name": "@moltendb-web/core",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "MoltenDB WASM runtime — the database engine, Web Worker, and main-thread client in one package.",
   "type": "module",
   "author": "Maximilian Both <maximilian.both27@outlook.com>",
-  "license": "LICENSE.md",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/maximilian27/moltendb-web/tree/master/packages/core"
