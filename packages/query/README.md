@@ -235,4 +235,4 @@ Found a bug or have a feature request? Please open an issue on the [GitHub issue
 
 ## License
 
-MIT OR Apache-2.0
+MIT
