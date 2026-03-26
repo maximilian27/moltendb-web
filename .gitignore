@@ -2,3 +2,6 @@
 .idea
 
 
+/packages/core/node_modules/
+/packages/core/test-results/
+/packages/core/coverage/

@@ -9,6 +9,8 @@ export interface MoltenDBOptions {
     syncIntervalMs?: number;
     /** JWT token for WebSocket authentication. */
     authToken?: string;
+    /** Called whenever a DB mutation event is broadcast (all tabs). */
+    onEvent?: (event: DBEvent) => void;
 }
 export type SyncCallback = (update: {
     event: 'change' | 'delete' | 'drop';
@@ -16,11 +18,17 @@ export type SyncCallback = (update: {
     key: string;
     new_v: number | null;
 }) => void;
+export interface DBEvent {
+    type: 'event';
+    event: 'change' | 'delete' | 'drop';
+    collection: string;
+    key: string;
+    new_v: number | null;
+}
 export declare class MoltenDB {
     readonly dbName: string;
     readonly workerUrl?: string | URL;
     worker: Worker | null;
-    private messageId;
     private pendingRequests;
     isLeader: boolean;
     private bc;
@@ -33,17 +41,18 @@ export declare class MoltenDB {
     private syncQueue;
     private syncTimer;
     /** ⚡ Hook to listen to native real-time DB mutations (works on all tabs) */
-    onEvent?: (event: any) => void;
+    onEvent?: (event: DBEvent) => void;
     constructor(dbName?: string, options?: MoltenDBOptions);
+    private initialized;
     init(): Promise<void>;
     private startAsLeader;
     private startAsFollower;
     sendMessage(action: string, payload?: Record<string, unknown>): Promise<any>;
-    set(collection: string, key: string, value: Record<string, unknown>, options?: {
+    set(collection: string, key: string, value: any, options?: {
         skipSync?: boolean;
     }): Promise<void>;
     get(collection: string, key: string): Promise<unknown>;
-    getAll(collection: string): Promise<unknown>;
+    getAll(collection: string): Promise<unknown[]>;
     delete(collection: string, key: string, options?: {
         skipSync?: boolean;
     }): Promise<void>;
