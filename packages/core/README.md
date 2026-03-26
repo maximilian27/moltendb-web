@@ -11,6 +11,7 @@
   [![NPM Version](https://img.shields.io/npm/v/@moltendb-web/core?style=flat-square&color=orange)](https://www.npmjs.com/package/@moltendb-web/core)
   [![License](https://img.shields.io/badge/license-BSL%201.1-blue?style=flat-square)](LICENSE.md)
   [![WASM](https://img.shields.io/badge/wasm-optimized-magenta?style=flat-square)](https://webassembly.org/)
+  [![Status](https://img.shields.io/badge/status-release%20candidate-brightgreen?style=flat-square)]()
 
 </div>
 
@@ -19,6 +20,8 @@
 ## What is MoltenDB Web?
 
 MoltenDB is a JSON document database written in Rust that runs directly in your browser. Unlike traditional browser databases limited by `localStorage` quotas or IndexedDB's complex API, MoltenDB leverages the **Origin Private File System (OPFS)** to provide a high-performance, append-only storage engine.
+
+> **🚀 Release Candidate** — The core engine, multi-tab sync, and storage layer are feature-complete and stabilised for v1. Server sync, encryption and analytics are planned for a future release.
 
 ### 🎮 Explore the Full Functionality
 
@@ -32,6 +35,9 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 - **Pure Rust Engine:** The same query logic used in our server binary, compiled to WebAssembly.
 - **OPFS Persistence:** Data persists across page reloads in a dedicated, high-speed sandbox.
 - **Worker-Threaded:** The database runs entirely inside a Web Worker—zero impact on your UI thread.
+- **Multi-Tab Sync (stabilised):** Leader election via the Web Locks API ensures only one tab owns the OPFS handle. All other tabs proxy reads and writes through a `BroadcastChannel`. Seamless leader promotion when the active tab closes.
+- **Automatic Compaction:** The engine automatically compacts the append-only log when it exceeds **500 entries or 5 MB**, keeping storage lean without any manual intervention.
+- **Real-Time Pub/Sub (`onEvent`):** Every write and delete emits a typed `DBEvent` to all open tabs instantly — no polling, no extra infrastructure.
 - **GraphQL-style Selection:** Request only the fields you need (even deeply nested ones) to save memory and CPU.
 - **Auto-Indexing:** The engine monitors your queries and automatically creates indexes for frequently filtered fields.
 - **Conflict Resolution:** Incoming writes with `_v ≤ stored _v` are silently skipped.
@@ -244,8 +250,62 @@ await client.collection('laptops')
 
 MoltenDB uses an append-only JSON log. Every write is a new line, ensuring your data is safe even if the tab is closed unexpectedly.
 
-- **Compaction:** When the log exceeds 5MB or 500 entries, the engine automatically "squashes" the log, removing old versions of documents to save space.
+- **Automatic Compaction:** When the log exceeds **500 entries or 5 MB**, the engine automatically "squashes" the log, removing superseded document versions to reclaim space. No manual `compact()` calls are needed in normal operation.
 - **Persistence:** All data is stored in the Origin Private File System (OPFS). This is a special file system for web apps that provides much higher performance than IndexedDB.
+
+### Multi-Tab Sync
+
+MoltenDB uses the **Web Locks API** for leader election. The first tab to acquire the lock becomes the *leader* and owns the OPFS file handle directly. Every subsequent tab becomes a *follower* and proxies all reads and writes through a `BroadcastChannel` to the leader.
+
+When the leader tab is closed, the next queued follower automatically acquires the lock and promotes itself to leader — no data loss, no manual reconnection required.
+
+```
+Tab 1 (Leader) ──owns──▶ Web Worker ──▶ WASM Engine ──▶ OPFS
+     │
+     └── BroadcastChannel ──▶ Tab 2 (Follower)
+                          ──▶ Tab 3 (Follower)
+```
+
+### Real-Time Events (Pub/Sub)
+
+MoltenDB has a built-in pub/sub system that automatically notifies **all open tabs** whenever a document is created, updated, or deleted — no polling required.
+
+Assign a callback to `onEvent` after calling `init()`:
+
+```ts
+const db = new MoltenDB('my-app');
+await db.init();
+
+db.onEvent = (event) => {
+  console.log(event.event);      // 'change' | 'delete' | 'drop'
+  console.log(event.collection); // e.g. 'laptops'
+  console.log(event.key);        // e.g. 'lp1'
+  console.log(event.new_v);      // new version number, or null on delete
+};
+```
+
+The event fires on the **leader tab** (directly from the WASM engine) and is automatically broadcast over the `BroadcastChannel` so every **follower tab** receives it too. This makes it trivial to keep your UI in sync across tabs without any extra infrastructure:
+
+```ts
+db.onEvent = ({ event, collection, key }) => {
+  if (collection === 'laptops') {
+    refreshLaptopList(); // re-query and re-render
+  }
+};
+```
+
+The `DBEvent` type is exported from the package for full TypeScript support:
+
+```ts
+import { MoltenDB, DBEvent } from '@moltendb-web/core';
+
+const db = new MoltenDB('my-app');
+await db.init();
+
+db.onEvent = (e: DBEvent) => { /* fully typed */ };
+```
+
+---
 
 ### Performance Note
 
@@ -256,6 +316,39 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
+---
+
+## Testing
+
+The core package ships with a comprehensive test suite built on **Vitest**:
+
+```bash
+cd packages/core
+npm test              # run all unit & integration tests
+npm run test:coverage # with coverage report
+```
+
+### What's covered
+
+| Suite | Tests | What it verifies |
+|---|---|---|
+| `init()` | 5 | Leader election, idempotency, worker error propagation |
+| CRUD — leader | 9 | set/get/delete/getAll round-trips, collection isolation |
+| CRUD — follower | 3 | BroadcastChannel proxy path for all mutations |
+| Worker error handling | 3 | Transient errors, unknown actions, request isolation |
+| Leader promotion | 2 | Follower takes over when leader tab closes |
+| `onEvent` hook | 2 | Real-time event delivery to leader and followers |
+| Follower timeout | 1 | Pending requests reject after 10 s if leader disappears |
+| `terminate` / `disconnect` | 3 | Worker cleanup, timer teardown |
+| Stress — rapid writes | 3 | 100 sequential, 50 concurrent, interleaved set/delete |
+| BC name isolation | 2 | Two databases on the same origin don't bleed data |
+| Bulk insert stress | 3 | 1 000 concurrent sets, 500 mixed ops, compact under pressure |
+| Multi-tab parallel stress | 4 | 3 tabs × 100 writes, ID collision safety, follower reads after burst, promotion under load |
+
+**Total: 50 tests — all green.**
+
+---
+
 ## Project Structure
 
 This monorepo contains the following packages:
@@ -265,17 +358,26 @@ This monorepo contains the following packages:
 
 ## Roadmap
 
-- [ ] ~~**Multi-Tab Sync:** Leader election for multiple tabs to share a single OPFS instance.~~ ✅
+- [x] **Multi-Tab Sync:** Leader election for multiple tabs to share a single OPFS instance — **stabilised in RC1**.
+- [x] **Automatic Compaction:** Log compacts automatically at 500 entries or 5 MB — **stabilised in RC1**.
+- [x] **Rich Test Suite:** 50 unit, integration, and stress tests via Vitest — **stabilised in RC1**.
+- [ ] **React Adapter:** Official `@moltendb-web/react` package with `useQuery` hooks and real-time context providers.
+- [ ] **Angular Adapter:** Official `@moltendb-web/angular` package featuring RxJS observables and Signal-based data fetching.
 - [ ] **Delta Sync:** Automatic two-way sync with the MoltenDB Rust server.
-- [ ] **Analytics functionality:** Run analytics queries straight in the browser. 
+- [ ] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Web Crypto API).
+- [ ] **Analytics Functionality:** Run complex analytics queries straight in the browser without blocking the UI.
+
+
+## Contributing & Feedback
+
+Found a bug or have a feature request? Please open an issue on the [GitHub issue tracker](https://github.com/maximilian27/moltendb-web/issues).
+
+---
 
 ## License
 
-MoltenDB is licensed under the **Business Source License 1.1**.
+The MoltenDB Web packages (`@moltendb-web/core` and `@moltendb-web/query`) are licensed under the MIT License.
 
-- Free for personal use and organizations with annual revenue under $5 million USD.
-- Converts to MIT automatically 3 years after each version's release date.
+The **MoltenDB Server** (Rust backend) remains under the Business Source License 1.1 (Free for organizations under $5M revenue, requires a license for managed services).
 
 For commercial licensing or questions: [maximilian.both27@outlook.com](mailto:maximilian.both27@outlook.com)
-
-

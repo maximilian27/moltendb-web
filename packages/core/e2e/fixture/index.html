@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MoltenDB E2E Fixture</title>
+</head>
+<body>
+<div id="status">loading…</div>
+<script type="module">
+  import { MoltenDB } from '../../dist/index.js';
+
+  const db = new MoltenDB('e2e-db');
+
+  window.__db = db;
+  window.__moltenReady = false;
+  window.__events = [];
+
+  db.onEvent = (e) => window.__events.push(e);
+
+  db.init().then(() => {
+    window.__moltenReady = true;
+    document.getElementById('status').textContent =
+        db.isLeader ? 'leader' : 'follower';
+  }).catch((err) => {
+    document.getElementById('status').textContent = 'error: ' + err.message;
+  });
+
+  // --- NEW: Helper to convert Maps to Objects for Playwright ---
+  // This is required because JSON.stringify(new Map()) returns "{}"
+  const toPlainObject = (data) => {
+    if (data instanceof Map) {
+      return Object.fromEntries(
+          Array.from(data.entries(), ([k, v]) => [k, toPlainObject(v)])
+      );
+    }
+    if (Array.isArray(data)) {
+      return data.map(toPlainObject);
+    }
+    return data;
+  };
+
+  // --- UPDATED: Helpers called from Playwright ---
+  window.dbSet    = (col, key, val) => db.set(col, key, val);
+
+  window.dbGet = async (col, key) => {
+    const result = await db.get(col, key);
+    return toPlainObject(result);
+  };
+
+  window.dbGetAll = async (col) => {
+    const result = await db.getAll(col);
+    return toPlainObject(result);
+  };
+
+  window.dbDelete = (col, key)      => db.delete(col, key);
+  window.dbRole   = ()              => (db.isLeader ? 'leader' : 'follower');
+
+  // At the bottom of your script tag
+  window.runStressTest = async () => {
+    console.log("🚀 Starting Stress Test: 600 writes...");
+    const startTime = performance.now();
+
+    for (let i = 0; i < 600; i++) {
+      await db.set('stress_test', 'heavy_key', {
+        iteration: i,
+        timestamp: Date.now(),
+        data: "X".repeat(1000)
+      });
+      if (i % 100 === 0) console.log(`Processed ${i} writes...`);
+    }
+
+    const endTime = performance.now();
+    console.log(`✅ Finished in ${((endTime - startTime)/1000).toFixed(2)}s`);
+  };
+</script>
+</body>
+</html>
