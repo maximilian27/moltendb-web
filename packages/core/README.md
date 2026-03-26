@@ -9,7 +9,7 @@
   [Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json) • [Core Engine](https://www.npmjs.com/package/@moltendb-web/core) • [Query Builder](https://www.npmjs.com/package/@moltendb-web/query) • [Original Repository](https://github.com/maximilian27/MoltenDB) • [License](LICENSE.md)
 
   [![NPM Version](https://img.shields.io/npm/v/@moltendb-web/core?style=flat-square&color=orange)](https://www.npmjs.com/package/@moltendb-web/core)
-  [![License](https://img.shields.io/badge/license-BSL%201.1-blue?style=flat-square)](LICENSE.md)
+  [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE.md)
   [![WASM](https://img.shields.io/badge/wasm-optimized-magenta?style=flat-square)](https://webassembly.org/)
   [![Status](https://img.shields.io/badge/status-release%20candidate-brightgreen?style=flat-square)]()
 
