@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><title>MoltenDB Debug</title></head>
+<body>
+<pre id="out">running…</pre>
+<script type="module">
+  import init, { WorkerDb } from '../../dist/moltendb.js';
+
+  const log = (...args) => {
+    document.getElementById('out').textContent += '\n' + args.map(a => JSON.stringify(a, null, 2)).join(' ');
+    console.log(...args);
+  };
+
+  await init();
+  const db = await new WorkerDb('debug-db');
+
+  // 1. set a value
+  const setResult = db.handle_message({ action: 'set', collection: 'test', data: { k1: { name: 'Alice', age: 30 } } });
+  log('set result:', setResult);
+
+  // 2. get existing key
+  const getResult = db.handle_message({ action: 'get', collection: 'test', keys: 'k1' });
+  log('get existing:', getResult);
+  log('get existing type:', typeof getResult, getResult?.constructor?.name);
+
+  // 3. get missing key
+  let getMissing;
+  try {
+    getMissing = db.handle_message({ action: 'get', collection: 'test', keys: 'missing' });
+    log('get missing (no throw):', getMissing);
+    log('get missing type:', typeof getMissing, getMissing?.constructor?.name);
+  } catch(e) {
+    log('get missing THREW:', String(e), typeof e, e?.constructor?.name);
+    if (e instanceof Map) log('it is a Map:', [...e.entries()]);
+    try { log('JSON.stringify(e):', JSON.stringify(e)); } catch(e2) { log('cannot stringify:', String(e2)); }
+  }
+
+  // 4. getAll
+  const getAllResult = db.handle_message({ action: 'get', collection: 'test' });
+  log('getAll:', getAllResult);
+  log('getAll type:', typeof getAllResult, getAllResult?.constructor?.name);
+
+  document.getElementById('out').textContent += '\n\nDONE';
+  window.__debugDone = true;
+</script>
+</body>
+</html>

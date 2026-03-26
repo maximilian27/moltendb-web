@@ -1,36 +1,55 @@
 import init, { WorkerDb } from './moltendb.js';
-let db;
+let db = null;
+let initPromise = null;
 self.onmessage = async (e) => {
     const { id, action, ...payload } = e.data;
-    // --- Initialization Phase ---
+    // --- 1. Initialization Phase ---
     if (action === 'init') {
+        if (!initPromise) {
+            initPromise = (async () => {
+                await init();
+                // FIX: You must await the async constructor
+                const instance = await new WorkerDb(payload.dbName);
+                // Listen to Rust and broadcast events
+                instance.subscribe((eventStr) => {
+                    try {
+                        const eventData = JSON.parse(eventStr);
+                        self.postMessage({ type: 'event', ...eventData });
+                    }
+                    catch (err) {
+                        console.error('[MoltenDB Worker] Event parse error', err);
+                    }
+                });
+                db = instance;
+                return instance;
+            })();
+        }
         try {
-            await init();
-            db = await new WorkerDb(payload.dbName);
-            // THE NATIVE FEED: Listen to Rust and broadcast to the main thread
-            db.subscribe((eventStr) => {
-                try {
-                    const eventData = JSON.parse(eventStr);
-                    // Use type: 'event' so the transport knows it's an unsolicited broadcast
-                    self.postMessage({ type: 'event', ...eventData });
-                }
-                catch (err) {
-                    console.error('[MoltenDB Worker] Failed to parse event', err);
-                }
-            });
+            await initPromise;
             self.postMessage({ id, result: { status: 'ok' } });
         }
         catch (error) {
-            self.postMessage({ id, error: String(error) });
+            // FIX: Handle Map-based errors from Rust correctly
+            const errorMsg = (error instanceof Map)
+                ? JSON.stringify(Object.fromEntries(error))
+                : String(error);
+            self.postMessage({ id, error: errorMsg });
         }
         return;
     }
-    // --- Standard Request/Response Phase ---
+    // --- 2. Standard Request/Response Phase ---
     try {
-        const result = db.handle_message({ action, ...payload });
+        if (!initPromise)
+            throw new Error("Worker not initialized");
+        const currentDb = await initPromise;
+        const result = currentDb.handle_message({ action, ...payload });
         self.postMessage({ id, result });
     }
     catch (error) {
-        self.postMessage({ id, error: String(error) });
+        // FIX: Handle Map-based errors here too
+        const errorMsg = (error instanceof Map)
+            ? JSON.stringify(Object.fromEntries(error))
+            : String(error);
+        self.postMessage({ id, error: errorMsg });
     }
 };

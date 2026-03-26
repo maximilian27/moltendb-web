@@ -227,8 +227,12 @@ npm run typecheck  # Type-check without emitting
 npm run test       # Run the Jest test suite
 ```
 
+## Contributing & Feedback
+
+Found a bug or have a feature request? Please open an issue on the [GitHub issue tracker](https://github.com/maximilian27/moltendb-web/issues).
+
 ---
 
 ## License
 
-MIT OR Apache-2.0
+MIT
