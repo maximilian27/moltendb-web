@@ -1,24 +1,9 @@
 export interface MoltenDBOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
-  /** Enable WebSocket sync with a MoltenDB server. Default: false. */
-  syncEnabled?: boolean;
-  /** WebSocket server URL. Default: 'wss://localhost:1538/ws'. */
-  serverUrl?: string;
-  /** Sync batch flush interval in ms. Default: 5000. */
-  syncIntervalMs?: number;
-  /** JWT token for WebSocket authentication. */
-  authToken?: string;
   /** Called whenever a DB mutation event is broadcast (all tabs). */
   onEvent?: (event: DBEvent) => void;
 }
-
-export type SyncCallback = (update: {
-  event: 'change' | 'delete' | 'drop';
-  collection: string;
-  key: string;
-  new_v: number | null;
-}) => void;
 
 export interface DBEvent {
   type: 'event';
@@ -39,15 +24,6 @@ export class MoltenDB {
   isLeader: boolean = false;
   private bc!: BroadcastChannel;
 
-  // Server Sync State
-  private syncEnabled: boolean;
-  private serverUrl: string;
-  private syncIntervalMs: number;
-  private authToken?: string;
-  private ws: WebSocket | null = null;
-  private syncCallbacks: SyncCallback[] = [];
-  private syncQueue: any[] = [];
-  private syncTimer: any = null;
 
   /** ⚡ Hook to listen to native real-time DB mutations (works on all tabs) */
   onEvent?: (event: DBEvent) => void;
@@ -55,10 +31,6 @@ export class MoltenDB {
   constructor(dbName = 'moltendb', options: MoltenDBOptions = {}) {
     this.dbName = dbName;
     this.workerUrl = options.workerUrl;
-    this.syncEnabled = options.syncEnabled ?? false;
-    this.serverUrl = options.serverUrl ?? 'wss://localhost:3000/ws';
-    this.syncIntervalMs = options.syncIntervalMs ?? 5000;
-    this.authToken = options.authToken;
     if (options.onEvent) this.onEvent = options.onEvent;
   }
 
@@ -142,7 +114,6 @@ export class MoltenDB {
       }
     };
 
-    if (this.syncEnabled) this.startSync();
   }
 
   private startAsFollower() {
@@ -197,11 +168,8 @@ export class MoltenDB {
 
   // ── Convenience CRUD helpers (CLEANED - NO DUPLICATES) ─────────────────────
 
-  async set(collection: string, key: string, value: any, options: { skipSync?: boolean } = {}): Promise<void> {
+  async set(collection: string, key: string, value: any): Promise<void> {
     await this.sendMessage('set', {collection, data: {[key]: value}});
-    if (this.syncEnabled && !options.skipSync && this.isLeader) {
-      this.syncQueue.push({action: 'set', collection, data: {[key]: value}});
-    }
   }
 
   async get(collection: string, key: string): Promise<unknown> {
@@ -229,52 +197,15 @@ export class MoltenDB {
     }
   }
 
-  async delete(collection: string, key: string, options: { skipSync?: boolean } = {}): Promise<void> {
+  async delete(collection: string, key: string): Promise<void> {
     await this.sendMessage('delete', {collection, keys: key});
-    if (this.syncEnabled && !options.skipSync && this.isLeader) {
-      this.syncQueue.push({action: 'delete', collection, keys: key});
-    }
   }
 
   compact(): Promise<unknown> {
     return this.sendMessage('compact');
   }
 
-  // ── Server Sync Implementation (Leader Only) ──────────────────────────────
-
-  private startSync() {
-    this.ws = new WebSocket(this.serverUrl);
-    this.ws.onopen = () => {
-      if (this.authToken) {
-        this.ws?.send(JSON.stringify({type: 'auth', token: this.authToken}));
-      }
-    };
-
-    this.ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.event) {
-          for (const cb of this.syncCallbacks) cb(msg);
-        }
-      } catch (err) {
-      }
-    };
-
-    this.syncTimer = setInterval(async () => {
-      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-      if (this.syncQueue.length === 0) return;
-      const batch = this.syncQueue.splice(0, this.syncQueue.length);
-      this.ws.send(JSON.stringify({type: 'batch', operations: batch}));
-    }, this.syncIntervalMs);
-  }
-
-  onSyncEvent(callback: SyncCallback) {
-    this.syncCallbacks.push(callback);
-  }
-
   disconnect() {
-    if (this.syncTimer) clearInterval(this.syncTimer);
-    if (this.ws) this.ws.close();
     if (this.bc) this.bc.close();
   }
 
