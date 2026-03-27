@@ -1,8 +1,6 @@
 export interface MoltenDBOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
-  /** Called whenever a DB mutation event is broadcast (all tabs). */
-  onEvent?: (event: DBEvent) => void;
 }
 
 export interface DBEvent {
@@ -24,15 +22,42 @@ export class MoltenDB {
   isLeader: boolean = false;
   private bc!: BroadcastChannel;
 
+  /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
+  public onEvent?: (event: DBEvent) => void;
 
-  /** ⚡ Hook to listen to native real-time DB mutations (works on all tabs) */
-  onEvent?: (event: DBEvent) => void;
+  // ── Multi-Subscriber Event System ──────────────────────────────────────────
+  private eventListeners = new Set<(event: DBEvent) => void>();
 
   constructor(dbName = 'moltendb', options: MoltenDBOptions = {}) {
     this.dbName = dbName;
     this.workerUrl = options.workerUrl;
-    if (options.onEvent) this.onEvent = options.onEvent;
   }
+
+  /**
+   * ⚡ Subscribe to real-time DB mutations.
+   * @returns An unsubscribe function to prevent memory leaks in UI frameworks.
+   */
+  subscribe(listener: (event: DBEvent) => void): () => void {
+    this.eventListeners.add(listener);
+    return () => this.eventListeners.delete(listener);
+  }
+
+  /** Manually remove a specific listener */
+  unsubscribe(listener: (event: DBEvent) => void): void {
+    this.eventListeners.delete(listener);
+  }
+
+  private dispatchEvent(event: DBEvent) {
+    // Fire all subscribed component handlers
+    for (const listener of this.eventListeners) {
+      try {
+        listener(event);
+      } catch (err) {
+        console.error('[MoltenDB] Error in subscribed listener', err);
+      }
+    }
+  }
+  // ───────────────────────────────────────────────────────────────────────────
 
   private initialized = false;
 
@@ -72,8 +97,8 @@ export class MoltenDB {
       await navigator.storage.getDirectory();
     } catch {
       throw new Error(
-        '[MoltenDB] Origin Private File System (OPFS) is not available in this browser context. ' +
-        'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
+          '[MoltenDB] Origin Private File System (OPFS) is not available in this browser context. ' +
+          'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
       );
     }
 
@@ -86,7 +111,7 @@ export class MoltenDB {
     this.worker.onmessage = (e) => {
       const data = e.data;
       if (data.type === 'event') {
-        if (this.onEvent) this.onEvent(data);
+        this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
         this.bc.postMessage(data);
         return;
       }
@@ -113,7 +138,6 @@ export class MoltenDB {
         }
       }
     };
-
   }
 
   private startAsFollower() {
@@ -126,7 +150,7 @@ export class MoltenDB {
     this.bc.onmessage = (e) => {
       const data = e.data;
       if (data.type === 'event') {
-        if (this.onEvent) this.onEvent(data);
+        this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
         return;
       }
       if (data.type === 'response') {
@@ -141,7 +165,6 @@ export class MoltenDB {
   }
 
   async sendMessage(action: string, payload?: Record<string, unknown>): Promise<any> {
-    // FIX: Use random UUIDs so tabs don't collide on message IDs
     const id = crypto.randomUUID();
 
     return new Promise((resolve, reject) => {
@@ -166,7 +189,7 @@ export class MoltenDB {
     });
   }
 
-  // ── Convenience CRUD helpers (CLEANED - NO DUPLICATES) ─────────────────────
+  // ── Convenience CRUD helpers ───────────────────────────────────────────────
 
   async set(collection: string, key: string, value: any): Promise<void> {
     await this.sendMessage('set', {collection, data: {[key]: value}});
