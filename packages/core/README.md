@@ -37,7 +37,7 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 - **Worker-Threaded:** The database runs entirely inside a Web Worker—zero impact on your UI thread.
 - **Multi-Tab Sync (stabilised):** Leader election via the Web Locks API ensures only one tab owns the OPFS handle. All other tabs proxy reads and writes through a `BroadcastChannel`. Seamless leader promotion when the active tab closes.
 - **Automatic Compaction:** The engine automatically compacts the append-only log when it exceeds **500 entries or 5 MB**, keeping storage lean without any manual intervention.
-- **Real-Time Pub/Sub (`onEvent`):** Every write and delete emits a typed `DBEvent` to all open tabs instantly — no polling, no extra infrastructure.
+- **Real-Time Pub/Sub:** Every write and delete emits a typed `DBEvent` to all open tabs instantly. The `subscribe()` pattern supports multiple independent listeners per tab — perfect for modern UI frameworks like React and Angular.
 - **GraphQL-style Selection:** Request only the fields you need (even deeply nested ones) to save memory and CPU.
 - **Auto-Indexing:** The engine monitors your queries and automatically creates indexes for frequently filtered fields.
 - **Conflict Resolution:** Incoming writes with `_v ≤ stored _v` are silently skipped.
@@ -270,28 +270,32 @@ Tab 1 (Leader) ──owns──▶ Web Worker ──▶ WASM Engine ──▶ OP
 
 MoltenDB has a built-in pub/sub system that automatically notifies **all open tabs** whenever a document is created, updated, or deleted — no polling required.
 
-Assign a callback to `onEvent` after calling `init()`:
+You can attach multiple independent listeners using the subscribe() method, making it trivial to keep different UI components (like React hooks or Angular signals) in sync without memory leaks:
 
 ```ts
 const db = new MoltenDB('my-app');
 await db.init();
 
-db.onEvent = (event) => {
+// Attach a listener (Returns an unsubscribe function)
+const unsubscribe = db.subscribe((event) => {
   console.log(event.event);      // 'change' | 'delete' | 'drop'
   console.log(event.collection); // e.g. 'laptops'
   console.log(event.key);        // e.g. 'lp1'
   console.log(event.new_v);      // new version number, or null on delete
-};
+});
+
+// Later, when the UI component unmounts:
+unsubscribe();
 ```
 
 The event fires on the **leader tab** (directly from the WASM engine) and is automatically broadcast over the `BroadcastChannel` so every **follower tab** receives it too. This makes it trivial to keep your UI in sync across tabs without any extra infrastructure:
 
 ```ts
-db.onEvent = ({ event, collection, key }) => {
+db.subscribe(({ event, collection, key }) => {
   if (collection === 'laptops') {
     refreshLaptopList(); // re-query and re-render
   }
-};
+});
 ```
 
 The `DBEvent` type is exported from the package for full TypeScript support:
@@ -302,8 +306,7 @@ import { MoltenDB, DBEvent } from '@moltendb-web/core';
 const db = new MoltenDB('my-app');
 await db.init();
 
-db.onEvent = (e: DBEvent) => { /* fully typed */ };
-```
+db.subscribe((e: DBEvent) => { /* fully typed */ });```
 
 ---
 
@@ -337,7 +340,7 @@ npm run test:coverage # with coverage report
 | CRUD — follower | 3 | BroadcastChannel proxy path for all mutations |
 | Worker error handling | 3 | Transient errors, unknown actions, request isolation |
 | Leader promotion | 2 | Follower takes over when leader tab closes |
-| `onEvent` hook | 2 | Real-time event delivery to leader and followers |
+| `Pub/Sub (subscribe)`  | 2 | Multi-subscriber event delivery across tabs |
 | Follower timeout | 1 | Pending requests reject after 10 s if leader disappears |
 | `terminate` / `disconnect` | 3 | Worker cleanup, timer teardown |
 | Stress — rapid writes | 3 | 100 sequential, 50 concurrent, interleaved set/delete |
