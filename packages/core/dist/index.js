@@ -6,27 +6,38 @@ export class MoltenDB {
     // Multi-tab Sync State
     isLeader = false;
     bc;
-    // Server Sync State
-    syncEnabled;
-    serverUrl;
-    syncIntervalMs;
-    authToken;
-    ws = null;
-    syncCallbacks = [];
-    syncQueue = [];
-    syncTimer = null;
-    /** ⚡ Hook to listen to native real-time DB mutations (works on all tabs) */
+    /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
     onEvent;
+    // ── Multi-Subscriber Event System ──────────────────────────────────────────
+    eventListeners = new Set();
     constructor(dbName = 'moltendb', options = {}) {
         this.dbName = dbName;
         this.workerUrl = options.workerUrl;
-        this.syncEnabled = options.syncEnabled ?? false;
-        this.serverUrl = options.serverUrl ?? 'wss://localhost:3000/ws';
-        this.syncIntervalMs = options.syncIntervalMs ?? 5000;
-        this.authToken = options.authToken;
-        if (options.onEvent)
-            this.onEvent = options.onEvent;
     }
+    /**
+     * ⚡ Subscribe to real-time DB mutations.
+     * @returns An unsubscribe function to prevent memory leaks in UI frameworks.
+     */
+    subscribe(listener) {
+        this.eventListeners.add(listener);
+        return () => this.eventListeners.delete(listener);
+    }
+    /** Manually remove a specific listener */
+    unsubscribe(listener) {
+        this.eventListeners.delete(listener);
+    }
+    dispatchEvent(event) {
+        // Fire all subscribed component handlers
+        for (const listener of this.eventListeners) {
+            try {
+                listener(event);
+            }
+            catch (err) {
+                console.error('[MoltenDB] Error in subscribed listener', err);
+            }
+        }
+    }
+    // ───────────────────────────────────────────────────────────────────────────
     initialized = false;
     async init() {
         if (this.initialized)
@@ -74,8 +85,7 @@ export class MoltenDB {
         this.worker.onmessage = (e) => {
             const data = e.data;
             if (data.type === 'event') {
-                if (this.onEvent)
-                    this.onEvent(data);
+                this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
                 this.bc.postMessage(data);
                 return;
             }
@@ -102,8 +112,6 @@ export class MoltenDB {
                 }
             }
         };
-        if (this.syncEnabled)
-            this.startSync();
     }
     startAsFollower() {
         this.isLeader = false;
@@ -114,8 +122,7 @@ export class MoltenDB {
         this.bc.onmessage = (e) => {
             const data = e.data;
             if (data.type === 'event') {
-                if (this.onEvent)
-                    this.onEvent(data);
+                this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
                 return;
             }
             if (data.type === 'response') {
@@ -131,7 +138,6 @@ export class MoltenDB {
         };
     }
     async sendMessage(action, payload) {
-        // FIX: Use random UUIDs so tabs don't collide on message IDs
         const id = crypto.randomUUID();
         return new Promise((resolve, reject) => {
             if (this.isLeader && this.worker) {
@@ -153,12 +159,9 @@ export class MoltenDB {
             }
         });
     }
-    // ── Convenience CRUD helpers (CLEANED - NO DUPLICATES) ─────────────────────
-    async set(collection, key, value, options = {}) {
+    // ── Convenience CRUD helpers ───────────────────────────────────────────────
+    async set(collection, key, value) {
         await this.sendMessage('set', { collection, data: { [key]: value } });
-        if (this.syncEnabled && !options.skipSync && this.isLeader) {
-            this.syncQueue.push({ action: 'set', collection, data: { [key]: value } });
-        }
     }
     async get(collection, key) {
         try {
@@ -189,51 +192,13 @@ export class MoltenDB {
             throw err;
         }
     }
-    async delete(collection, key, options = {}) {
+    async delete(collection, key) {
         await this.sendMessage('delete', { collection, keys: key });
-        if (this.syncEnabled && !options.skipSync && this.isLeader) {
-            this.syncQueue.push({ action: 'delete', collection, keys: key });
-        }
     }
     compact() {
         return this.sendMessage('compact');
     }
-    // ── Server Sync Implementation (Leader Only) ──────────────────────────────
-    startSync() {
-        this.ws = new WebSocket(this.serverUrl);
-        this.ws.onopen = () => {
-            if (this.authToken) {
-                this.ws?.send(JSON.stringify({ type: 'auth', token: this.authToken }));
-            }
-        };
-        this.ws.onmessage = (e) => {
-            try {
-                const msg = JSON.parse(e.data);
-                if (msg.event) {
-                    for (const cb of this.syncCallbacks)
-                        cb(msg);
-                }
-            }
-            catch (err) {
-            }
-        };
-        this.syncTimer = setInterval(async () => {
-            if (!this.ws || this.ws.readyState !== WebSocket.OPEN)
-                return;
-            if (this.syncQueue.length === 0)
-                return;
-            const batch = this.syncQueue.splice(0, this.syncQueue.length);
-            this.ws.send(JSON.stringify({ type: 'batch', operations: batch }));
-        }, this.syncIntervalMs);
-    }
-    onSyncEvent(callback) {
-        this.syncCallbacks.push(callback);
-    }
     disconnect() {
-        if (this.syncTimer)
-            clearInterval(this.syncTimer);
-        if (this.ws)
-            this.ws.close();
         if (this.bc)
             this.bc.close();
     }

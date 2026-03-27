@@ -282,42 +282,48 @@ describe('Leader promotion', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('onEvent hook', () => {
-  it('leader fires onEvent when the worker emits an event', async () => {
-    const db = await makeLeader();
-    const worker = getWorker();
-    const events: unknown[] = [];
-    db.onEvent = (e) => events.push(e);
+  it('multi-subscriber pattern works across tabs (subscribe/unsubscribe)', async () => {
+    const leader = await makeLeader('mt-events');
+    const follower = await makeFollower('mt-events');
 
-    // Simulate the worker pushing an unsolicited event
-    worker.onmessage?.(
-      new MessageEvent('message', {
-        data: { type: 'event', event: 'change', collection: 'users', key: 'alice' },
-      }),
+    const spy1 = vi.fn();
+    const spy2 = vi.fn();
+
+    // Attach two separate listeners to the follower
+    const unsubscribe1 = follower.subscribe(spy1);
+    follower.subscribe(spy2);
+
+    // Simulate the WASM worker on the Leader pushing a real-time event
+    // (We must do this manually because FakeWorker doesn't auto-emit on .set())
+    leader.worker!.onmessage!(
+        new MessageEvent('message', {
+          data: { type: 'event', event: 'change', collection: 'mt-col', key: 'k1' },
+        })
     );
 
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ event: 'change', collection: 'users' });
-  });
+    await new Promise((r) => setTimeout(r, 10)); // wait for async BroadcastChannel
 
-  it('follower fires onEvent when the leader broadcasts an event', async () => {
-    await makeLeader();
-    const follower = await makeFollower();
-    const events: unknown[] = [];
-    follower.onEvent = (e) => events.push(e);
-
-    // Simulate the leader worker pushing an event → leader broadcasts via BC
-    const leaderWorker = getWorker(0);
-    leaderWorker.onmessage?.(
-      new MessageEvent('message', {
-        data: { type: 'event', event: 'delete', collection: 'orders', key: 'o99' },
-      }),
+    // Both listeners on the Follower should fire
+    expect(spy1).toHaveBeenCalledTimes(1);
+    expect(spy2).toHaveBeenCalledTimes(1);
+    expect(spy1).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'event', collection: 'mt-col', key: 'k1' })
     );
 
-    // BC delivery is synchronous in our fake, but give a tick anyway
-    await new Promise(r => setTimeout(r, 0));
+    // Unsubscribe spy1, then simulate another mutation
+    unsubscribe1();
 
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ event: 'delete', collection: 'orders' });
+    leader.worker!.onmessage!(
+        new MessageEvent('message', {
+          data: { type: 'event', event: 'change', collection: 'mt-col', key: 'k2' },
+        })
+    );
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    // spy1 should not increase, spy2 should catch the new event
+    expect(spy1).toHaveBeenCalledTimes(1);
+    expect(spy2).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -326,49 +332,27 @@ describe('onEvent hook', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('Follower request timeout', () => {
-  it('follower rejects a pending request after the leader disappears', async () => {
+  it('follower query times out if leader becomes unresponsive', async () => {
+    const leader = await makeLeader('mt-timeout');
+    const follower = await makeFollower('mt-timeout');
+
     vi.useFakeTimers();
 
-    await makeLeader('timeout-db');
-    const follower = await makeFollower('timeout-db');
+    // Simulate leader crashing silently by removing its Worker
+    // so it never responds to the BC query
+    if (leader.worker) {
+      leader.worker.terminate();
+      leader.worker = null;
+    }
 
-    // Disconnect the leader's BC so it never responds
-    // (simulate leader tab crash mid-request)
-    // We do this by replacing the leader's bc.onmessage with a no-op
-    // The follower will post a query that never gets a response.
+    // Follower attempts to read
+    const getPromise = follower.get('col', 'k1');
 
-    // NOTE: This test documents the *current* behaviour (hangs forever) and
-    // will need updating once the timeout fix from the audit is implemented.
-    // For now we verify the promise is still pending after 9 s and rejects at 10 s.
+    // Fast-forward time past the 10-second threshold
+    vi.advanceTimersByTime(10500);
 
-    // Patch sendMessage to add a 10 s timeout (the recommended fix)
-    const originalSend = follower.sendMessage.bind(follower);
-    follower.sendMessage = (action: string, payload = {}) =>
-      Promise.race([
-        originalSend(action, payload),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error('[MoltenDB] Request timed out — leader may have closed')),
-            10_000,
-          ),
-        ),
-      ]);
-
-    // Silence the leader so it never responds
-    (follower as unknown as { bc: { onmessage: null } }).bc.onmessage = null;
-
-    const pending = follower.get('col', 'key');
-
-    // Still pending at 9 s
-    vi.advanceTimersByTime(9_000);
-    let settled = false;
-    pending.then(() => (settled = true)).catch(() => (settled = true));
-    await Promise.resolve(); // flush microtasks
-    expect(settled).toBe(false);
-
-    // Rejects at 10 s
-    vi.advanceTimersByTime(1_001);
-    await expect(pending).rejects.toThrow('timed out');
+    // The promise should explicitly reject with the timeout error
+    await expect(getPromise).rejects.toThrow(/timed out/);
   });
 });
 
