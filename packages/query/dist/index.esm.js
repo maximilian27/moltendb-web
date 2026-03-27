@@ -40,47 +40,6 @@
 //   await db.collection('laptops').delete().drop().exec();
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ─── WorkerTransport ──────────────────────────────────────────────────────────
-/**
- * Default transport that communicates with a MoltenDB Web Worker.
- *
- * The worker must follow the moltendb-worker.js message protocol:
- *   postMessage({ id, action, ...payload })
- *   onmessage → { id, result } | { id, error }
- */
-class WorkerTransport {
-    constructor(worker, startId = 0) {
-        this.pending = new Map();
-        this.messageId = startId;
-        this.worker = worker;
-        this.worker.addEventListener('message', (event) => {
-            // 1. Intercept unsolicited broadcast events from the Rust core
-            if (event.data && event.data.type === 'event') {
-                if (this.onEvent)
-                    this.onEvent(event.data);
-                return; // Don't try to process this as a promise resolution
-            }
-            // 2. Standard request/response routing
-            const { id, result, error } = event.data;
-            const p = this.pending.get(id);
-            if (!p)
-                return;
-            this.pending.delete(id);
-            if (error)
-                p.reject(new Error(error));
-            else
-                p.resolve(result ?? null);
-        });
-    }
-    sendMessage(action, payload) {
-        return new Promise((resolve, reject) => {
-            const id = this.messageId++;
-            this.pending.set(id, { resolve, reject });
-            this.worker.postMessage({ id, action, ...payload });
-        });
-    }
-}
-export { WorkerTransport as WorkerTransport };
 // ─── GetQuery ─────────────────────────────────────────────────────────────────
 /**
  * Builder for GET (read/query) operations.
