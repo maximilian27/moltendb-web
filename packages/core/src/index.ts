@@ -1,24 +1,7 @@
 export interface MoltenDBOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
-  /** Enable WebSocket sync with a MoltenDB server. Default: false. */
-  syncEnabled?: boolean;
-  /** WebSocket server URL. Default: 'wss://localhost:1538/ws'. */
-  serverUrl?: string;
-  /** Sync batch flush interval in ms. Default: 5000. */
-  syncIntervalMs?: number;
-  /** JWT token for WebSocket authentication. */
-  authToken?: string;
-  /** Called whenever a DB mutation event is broadcast (all tabs). */
-  onEvent?: (event: DBEvent) => void;
 }
-
-export type SyncCallback = (update: {
-  event: 'change' | 'delete' | 'drop';
-  collection: string;
-  key: string;
-  new_v: number | null;
-}) => void;
 
 export interface DBEvent {
   type: 'event';
@@ -39,28 +22,42 @@ export class MoltenDB {
   isLeader: boolean = false;
   private bc!: BroadcastChannel;
 
-  // Server Sync State
-  private syncEnabled: boolean;
-  private serverUrl: string;
-  private syncIntervalMs: number;
-  private authToken?: string;
-  private ws: WebSocket | null = null;
-  private syncCallbacks: SyncCallback[] = [];
-  private syncQueue: any[] = [];
-  private syncTimer: any = null;
+  /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
+  public onEvent?: (event: DBEvent) => void;
 
-  /** ⚡ Hook to listen to native real-time DB mutations (works on all tabs) */
-  onEvent?: (event: DBEvent) => void;
+  // ── Multi-Subscriber Event System ──────────────────────────────────────────
+  private eventListeners = new Set<(event: DBEvent) => void>();
 
   constructor(dbName = 'moltendb', options: MoltenDBOptions = {}) {
     this.dbName = dbName;
     this.workerUrl = options.workerUrl;
-    this.syncEnabled = options.syncEnabled ?? false;
-    this.serverUrl = options.serverUrl ?? 'wss://localhost:3000/ws';
-    this.syncIntervalMs = options.syncIntervalMs ?? 5000;
-    this.authToken = options.authToken;
-    if (options.onEvent) this.onEvent = options.onEvent;
   }
+
+  /**
+   * ⚡ Subscribe to real-time DB mutations.
+   * @returns An unsubscribe function to prevent memory leaks in UI frameworks.
+   */
+  subscribe(listener: (event: DBEvent) => void): () => void {
+    this.eventListeners.add(listener);
+    return () => this.eventListeners.delete(listener);
+  }
+
+  /** Manually remove a specific listener */
+  unsubscribe(listener: (event: DBEvent) => void): void {
+    this.eventListeners.delete(listener);
+  }
+
+  private dispatchEvent(event: DBEvent) {
+    // Fire all subscribed component handlers
+    for (const listener of this.eventListeners) {
+      try {
+        listener(event);
+      } catch (err) {
+        console.error('[MoltenDB] Error in subscribed listener', err);
+      }
+    }
+  }
+  // ───────────────────────────────────────────────────────────────────────────
 
   private initialized = false;
 
@@ -100,8 +97,8 @@ export class MoltenDB {
       await navigator.storage.getDirectory();
     } catch {
       throw new Error(
-        '[MoltenDB] Origin Private File System (OPFS) is not available in this browser context. ' +
-        'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
+          '[MoltenDB] Origin Private File System (OPFS) is not available in this browser context. ' +
+          'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
       );
     }
 
@@ -114,7 +111,7 @@ export class MoltenDB {
     this.worker.onmessage = (e) => {
       const data = e.data;
       if (data.type === 'event') {
-        if (this.onEvent) this.onEvent(data);
+        this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
         this.bc.postMessage(data);
         return;
       }
@@ -141,8 +138,6 @@ export class MoltenDB {
         }
       }
     };
-
-    if (this.syncEnabled) this.startSync();
   }
 
   private startAsFollower() {
@@ -155,7 +150,7 @@ export class MoltenDB {
     this.bc.onmessage = (e) => {
       const data = e.data;
       if (data.type === 'event') {
-        if (this.onEvent) this.onEvent(data);
+        this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
         return;
       }
       if (data.type === 'response') {
@@ -170,7 +165,6 @@ export class MoltenDB {
   }
 
   async sendMessage(action: string, payload?: Record<string, unknown>): Promise<any> {
-    // FIX: Use random UUIDs so tabs don't collide on message IDs
     const id = crypto.randomUUID();
 
     return new Promise((resolve, reject) => {
@@ -195,13 +189,10 @@ export class MoltenDB {
     });
   }
 
-  // ── Convenience CRUD helpers (CLEANED - NO DUPLICATES) ─────────────────────
+  // ── Convenience CRUD helpers ───────────────────────────────────────────────
 
-  async set(collection: string, key: string, value: any, options: { skipSync?: boolean } = {}): Promise<void> {
+  async set(collection: string, key: string, value: any): Promise<void> {
     await this.sendMessage('set', {collection, data: {[key]: value}});
-    if (this.syncEnabled && !options.skipSync && this.isLeader) {
-      this.syncQueue.push({action: 'set', collection, data: {[key]: value}});
-    }
   }
 
   async get(collection: string, key: string): Promise<unknown> {
@@ -229,52 +220,15 @@ export class MoltenDB {
     }
   }
 
-  async delete(collection: string, key: string, options: { skipSync?: boolean } = {}): Promise<void> {
+  async delete(collection: string, key: string): Promise<void> {
     await this.sendMessage('delete', {collection, keys: key});
-    if (this.syncEnabled && !options.skipSync && this.isLeader) {
-      this.syncQueue.push({action: 'delete', collection, keys: key});
-    }
   }
 
   compact(): Promise<unknown> {
     return this.sendMessage('compact');
   }
 
-  // ── Server Sync Implementation (Leader Only) ──────────────────────────────
-
-  private startSync() {
-    this.ws = new WebSocket(this.serverUrl);
-    this.ws.onopen = () => {
-      if (this.authToken) {
-        this.ws?.send(JSON.stringify({type: 'auth', token: this.authToken}));
-      }
-    };
-
-    this.ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.event) {
-          for (const cb of this.syncCallbacks) cb(msg);
-        }
-      } catch (err) {
-      }
-    };
-
-    this.syncTimer = setInterval(async () => {
-      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-      if (this.syncQueue.length === 0) return;
-      const batch = this.syncQueue.splice(0, this.syncQueue.length);
-      this.ws.send(JSON.stringify({type: 'batch', operations: batch}));
-    }, this.syncIntervalMs);
-  }
-
-  onSyncEvent(callback: SyncCallback) {
-    this.syncCallbacks.push(callback);
-  }
-
   disconnect() {
-    if (this.syncTimer) clearInterval(this.syncTimer);
-    if (this.ws) this.ws.close();
     if (this.bc) this.bc.close();
   }
 

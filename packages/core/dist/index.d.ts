@@ -1,23 +1,7 @@
 export interface MoltenDBOptions {
     /** URL or path to moltendb-worker.js. */
     workerUrl?: string | URL;
-    /** Enable WebSocket sync with a MoltenDB server. Default: false. */
-    syncEnabled?: boolean;
-    /** WebSocket server URL. Default: 'wss://localhost:1538/ws'. */
-    serverUrl?: string;
-    /** Sync batch flush interval in ms. Default: 5000. */
-    syncIntervalMs?: number;
-    /** JWT token for WebSocket authentication. */
-    authToken?: string;
-    /** Called whenever a DB mutation event is broadcast (all tabs). */
-    onEvent?: (event: DBEvent) => void;
 }
-export type SyncCallback = (update: {
-    event: 'change' | 'delete' | 'drop';
-    collection: string;
-    key: string;
-    new_v: number | null;
-}) => void;
 export interface DBEvent {
     type: 'event';
     event: 'change' | 'delete' | 'drop';
@@ -32,33 +16,28 @@ export declare class MoltenDB {
     private pendingRequests;
     isLeader: boolean;
     private bc;
-    private syncEnabled;
-    private serverUrl;
-    private syncIntervalMs;
-    private authToken?;
-    private ws;
-    private syncCallbacks;
-    private syncQueue;
-    private syncTimer;
-    /** ⚡ Hook to listen to native real-time DB mutations (works on all tabs) */
+    /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
     onEvent?: (event: DBEvent) => void;
+    private eventListeners;
     constructor(dbName?: string, options?: MoltenDBOptions);
+    /**
+     * ⚡ Subscribe to real-time DB mutations.
+     * @returns An unsubscribe function to prevent memory leaks in UI frameworks.
+     */
+    subscribe(listener: (event: DBEvent) => void): () => void;
+    /** Manually remove a specific listener */
+    unsubscribe(listener: (event: DBEvent) => void): void;
+    private dispatchEvent;
     private initialized;
     init(): Promise<void>;
     private startAsLeader;
     private startAsFollower;
     sendMessage(action: string, payload?: Record<string, unknown>): Promise<any>;
-    set(collection: string, key: string, value: any, options?: {
-        skipSync?: boolean;
-    }): Promise<void>;
+    set(collection: string, key: string, value: any): Promise<void>;
     get(collection: string, key: string): Promise<unknown>;
     getAll(collection: string): Promise<unknown[]>;
-    delete(collection: string, key: string, options?: {
-        skipSync?: boolean;
-    }): Promise<void>;
+    delete(collection: string, key: string): Promise<void>;
     compact(): Promise<unknown>;
-    private startSync;
-    onSyncEvent(callback: SyncCallback): void;
     disconnect(): void;
     terminate(): void;
 }

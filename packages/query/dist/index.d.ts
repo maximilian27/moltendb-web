@@ -65,21 +65,6 @@ export interface MoltenTransport {
     sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
 }
 /**
- * Default transport that communicates with a MoltenDB Web Worker.
- *
- * The worker must follow the moltendb-worker.js message protocol:
- *   postMessage({ id, action, ...payload })
- *   onmessage → { id, result } | { id, error }
- */
-export declare class WorkerTransport implements MoltenTransport {
-    private worker;
-    private messageId;
-    private pending;
-    onEvent?: (event: any) => void;
-    constructor(worker: Worker, startId?: number);
-    sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
-}
-/**
  * Builder for GET (read/query) operations.
  *
  * Allowed fields: collection, keys, where, fields, excludedFields,
