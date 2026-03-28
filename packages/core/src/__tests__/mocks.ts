@@ -119,8 +119,10 @@ export class FakeWorker {
       const col = this.store.get(collection);
       if (!col) return null;
       const keys = msg.keys as string | undefined;
+
+      // SIMULATE RUST: Return the internal Map directly
       if (keys) return col.get(keys) ?? null;
-      return Object.fromEntries(col);
+      return col; // This is a Map!
     }
 
     if (action === 'delete' && collection) {

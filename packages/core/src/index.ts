@@ -1,3 +1,5 @@
+import {mapToObj} from "./helpers";
+
 export interface MoltenDBOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
@@ -165,12 +167,17 @@ export class MoltenDB {
   }
 
   async sendMessage(action: string, payload?: Record<string, unknown>): Promise<any> {
-    const id = crypto.randomUUID();
+    // Generate a unique ID (random fallback for test environments without crypto.randomUUID)
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2, 9);
 
     return new Promise((resolve, reject) => {
+      const successHandler = (res: any) => resolve(mapToObj(res));
+
       if (this.isLeader && this.worker) {
-        this.pendingRequests.set(id, {resolve, reject});
-        this.worker.postMessage({id, action, ...payload});
+        this.pendingRequests.set(id, { resolve: successHandler, reject });
+        this.worker.postMessage({ id, action, ...payload });
       } else {
         const timer = setTimeout(() => {
           if (this.pendingRequests.has(id)) {
@@ -180,15 +187,14 @@ export class MoltenDB {
         }, 10000);
 
         this.pendingRequests.set(id, {
-          resolve: (v: any) => { clearTimeout(timer); resolve(v); },
+          resolve: (res: any) => { clearTimeout(timer); successHandler(res); },
           reject: (e: any) => { clearTimeout(timer); reject(e); }
         });
 
-        this.bc.postMessage({type: 'query', id, action, payload});
+        this.bc.postMessage({ type: 'query', id, action, payload });
       }
     });
   }
-
   // ── Convenience CRUD helpers ───────────────────────────────────────────────
 
   async set(collection: string, key: string, value: any): Promise<void> {
