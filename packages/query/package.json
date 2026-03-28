@@ -23,7 +23,8 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json && node scripts/build-esm.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "prepublishOnly": "npm run build"
   },
   "keywords": ["moltendb", "database", "query-builder", "nosql", "wasm"],
   "license": "MIT",

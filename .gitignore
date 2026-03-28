@@ -5,3 +5,7 @@
 /packages/core/node_modules/
 /packages/core/test-results/
 /packages/core/coverage/
+/packages/angular/dist/
+/packages/angular/node_modules/
+/packages/core/dist/
+/packages/query/dist/
