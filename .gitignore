@@ -7,5 +7,6 @@
 /packages/core/coverage/
 /packages/angular/dist/
 /packages/angular/node_modules/
-/packages/core/dist/
 /packages/query/dist/
+/packages/core/dist/
+
