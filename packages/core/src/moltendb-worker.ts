@@ -1,4 +1,4 @@
-import init, { WorkerDb } from './moltendb.js';
+import init, { WorkerDb } from './wasm/moltendb.js';
 
 let db: WorkerDb | null = null;
 let initPromise: Promise<WorkerDb> | null = null;
