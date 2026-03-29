@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/core",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-rc.3",
   "description": "MoltenDB WASM runtime — the database engine, Web Worker, and main-thread client in one package.",
   "type": "module",
   "author": "Maximilian Both <maximilian.both27@outlook.com>",
@@ -23,14 +23,16 @@
       "import": "./dist/moltendb-worker.js",
       "types": "./dist/moltendb-worker.d.ts"
     },
-    "./wasm": "./dist/moltendb.js",
-    "./wasm-bg": "./dist/moltendb_bg.wasm"
+    "./wasm": "./dist/wasm/moltendb.js",
+    "./wasm-bg": "./dist/wasm/moltendb_bg.wasm"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsc && npm run copy-wasm",
+    "copy-wasm": "copyfiles -u 1 \"src/wasm/**/*\" dist/",
+    "dev": "tsc --watch & npm run watch-wasm",
+    "watch-wasm": "copyfiles -u 1 -w \"src/wasm/**/*\" dist/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -41,6 +43,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^4.1.1",
+    "copyfiles": "^2.4.1",
     "happy-dom": "^20.8.7",
     "typescript": "^6.0.2",
     "vite": "^8.0.2",

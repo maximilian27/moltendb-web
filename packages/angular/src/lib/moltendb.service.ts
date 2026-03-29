@@ -4,7 +4,7 @@ import { MoltenDBClient } from '@moltendb-web/query';
 import { MOLTEN_CONFIG } from './moltendb.provider';
 
 @Injectable({ providedIn: 'root' })
-export class MoltenService {
+export class MoltenDbService {
   public db: MoltenDB;
   public client: MoltenDBClient;
 
