@@ -365,7 +365,7 @@ This monorepo contains the following packages:
 - [x] **Automatic Compaction:** Log compacts automatically at 500 entries or 5 MB — **stabilised in RC1**.
 - [x] **Rich Test Suite:** 50 unit, integration, and stress tests via Vitest — **stabilised in RC1**.
 - [ ] **React Adapter:** Official `@moltendb-web/react` package with `useQuery` hooks and real-time context providers.
-- [ ] **Angular Adapter:** Official `@moltendb-web/angular` package featuring RxJS observables and Signal-based data fetching.
+- [x] **Angular Adapter:** Official `@moltendb-web/angular` package featuring Signal-based data fetching.
 - [ ] **Delta Sync:** Automatic two-way sync with the MoltenDb Rust server.
 - [ ] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Web Crypto API).
 - [ ] **Analytics Functionality:** Run complex analytics queries straight in the browser without blocking the UI.
