@@ -17,6 +17,7 @@ export class MoltenDb {
   readonly dbName: string;
   readonly workerUrl?: string | URL;
   worker: Worker | null = null;
+  private initPromise: Promise<void> | null = null;
 
   private pendingRequests = new Map<string, { resolve: Function; reject: Function }>();
 
@@ -61,15 +62,14 @@ export class MoltenDb {
   }
   // ───────────────────────────────────────────────────────────────────────────
 
-  private initialized = false;
+  init(): Promise<void> {
+    // 1. If initialization has already started or finished, return the existing promise
+    if (this.initPromise) return this.initPromise;
 
-  async init(): Promise<void> {
-    if (this.initialized) return;
-    this.initialized = true;
+    // 2. Otherwise, start the initialization and store the promise
+    this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
+      this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
 
-    this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
-
-    return new Promise<void>((resolveInit, rejectInit) => {
       navigator.locks.request(`moltendb_lock_${this.dbName}`, {ifAvailable: true}, async (lock) => {
         if (lock) {
           try {
@@ -83,6 +83,7 @@ export class MoltenDb {
           this.startAsFollower();
           resolveInit();
 
+          // Wait in the background to become leader if the current leader dies
           navigator.locks.request(`moltendb_lock_${this.dbName}`, async () => {
             console.log(`[MoltenDb] Promoting this tab to Leader.`);
             await this.startAsLeader();
@@ -91,6 +92,8 @@ export class MoltenDb {
         }
       });
     });
+
+    return this.initPromise;
   }
 
   private async startAsLeader() {
@@ -167,7 +170,17 @@ export class MoltenDb {
   }
 
   async sendMessage(action: string, payload?: Record<string, unknown>): Promise<any> {
-    // Generate a unique ID (random fallback for test environments without crypto.randomUUID)
+    //  Wait for the engine to boot before routing the message.
+    // If the DB is already initialized, this resolves instantly.
+    if (action !== 'init') {
+      if (this.initPromise) {
+        await this.initPromise;
+      } else {
+        throw new Error('[MoltenDb] You must call db.init() before querying the database.');
+      }
+    }
+
+    // 2. Generate a unique ID
     const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
         ? crypto.randomUUID()
         : Math.random().toString(36).substring(2, 9);
@@ -175,14 +188,16 @@ export class MoltenDb {
     return new Promise((resolve, reject) => {
       const successHandler = (res: any) => resolve(mapToObj(res));
 
+      // 3. We are now GUARANTEED that isLeader, worker, and bc are accurately set
       if (this.isLeader && this.worker) {
         this.pendingRequests.set(id, { resolve: successHandler, reject });
         this.worker.postMessage({ id, action, ...payload });
       } else {
+        // Follower routing via BroadcastChannel
         const timer = setTimeout(() => {
           if (this.pendingRequests.has(id)) {
             this.pendingRequests.delete(id);
-            reject(new Error(`[MoltenDb] Request "${action}" timed out.`));
+            reject(new Error(`[MoltenDb] Request "${action}" timed out after 10s.`));
           }
         }, 10000);
 
@@ -194,8 +209,7 @@ export class MoltenDb {
         this.bc.postMessage({ type: 'query', id, action, payload });
       }
     });
-  }
-  // ── Convenience CRUD helpers ───────────────────────────────────────────────
+  }  // ── Convenience CRUD helpers ───────────────────────────────────────────────
 
   async set(collection: string, key: string, value: any): Promise<void> {
     await this.sendMessage('set', {collection, data: {[key]: value}});
