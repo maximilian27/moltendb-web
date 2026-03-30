@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MoltenDB E2E Fixture</title>
+  <title>MoltenDb E2E Fixture</title>
 </head>
 <body>
 <div id="status">loading…</div>
 <script type="module">
-  import { MoltenDB } from '../../dist/index.js';
+  import { MoltenDb } from '../../dist/index.js';
 
-  const db = new MoltenDB('e2e-db');
+  const db = new MoltenDb('e2e-db');
 
   window.__db = db;
   window.__moltenReady = false;
