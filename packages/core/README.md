@@ -37,7 +37,7 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 - **Worker-Threaded:** The database runs entirely inside a Web Worker—zero impact on your UI thread.
 - **Multi-Tab Sync (stabilised):** Leader election via the Web Locks API ensures only one tab owns the OPFS handle. All other tabs proxy reads and writes through a `BroadcastChannel`. Seamless leader promotion when the active tab closes.
 - **Automatic Compaction:** The engine automatically compacts the append-only log when it exceeds **500 entries or 5 MB**, keeping storage lean without any manual intervention.
-- **Real-Time Pub/Sub:** Every write and delete emits a typed `DBEvent` to all open tabs instantly. The `subscribe()` pattern supports multiple independent listeners per tab — perfect for modern UI frameworks like React and Angular.
+- **Real-Time Pub/Sub:** Every write and delete emits a typed `DbEvent` to all open tabs instantly. The `subscribe()` pattern supports multiple independent listeners per tab — perfect for modern UI frameworks like React and Angular.
 - **GraphQL-style Selection:** Request only the fields you need (even deeply nested ones) to save memory and CPU.
 - **Auto-Indexing:** The engine monitors your queries and automatically creates indexes for frequently filtered fields.
 - **Conflict Resolution:** Incoming writes with `_v ≤ stored _v` are silently skipped.
@@ -298,15 +298,15 @@ db.subscribe(({ event, collection, key }) => {
 });
 ```
 
-The `DBEvent` type is exported from the package for full TypeScript support:
+The `DbEvent` type is exported from the package for full TypeScript support:
 
 ```ts
-import { MoltenDb, DBEvent } from '@moltendb-web/core';
+import { MoltenDb, DbEvent } from '@moltendb-web/core';
 
 const db = new MoltenDb('my-app');
 await db.init();
 
-db.subscribe((e: DBEvent) => { /* fully typed */ });```
+db.subscribe((e: DbEvent) => { /* fully typed */ });```
 
 ---
 
