@@ -1,6 +1,5 @@
 name: Publish Monorepo to NPM
 
-# Trigger every time your Rust repo syncs to this repo's master branch
 on:
   push:
     branches:
@@ -19,11 +18,22 @@ jobs:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Publish Core and Query
+      # Root Install & Topological Build
+      # This prevents the Angular compiler from crashing by ensuring
+      # the local dependencies (core & query) are pre-compiled and symlinked.
+      - name: Install and Build Workspace
+        run: |
+          npm install
+          npm run build --workspace=@moltendb-web/core
+          npm run build --workspace=@moltendb-web/query
+          npm run build --workspace=@moltendb-web/angular
+
+      - name: Publish Packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          PACKAGES=("core" "query")
+          # ⚡ Added "angular" to the array
+          PACKAGES=("core" "query" "angular")
           
           for PKG in "${PACKAGES[@]}"; do
             echo "====================================="
@@ -31,7 +41,6 @@ jobs:
             echo "====================================="
           
             cd packages/$PKG
-            npm install
           
             # 1. Dynamically extract the exact package name from package.json
             PKG_NAME=$(node -p "require('./package.json').name")
