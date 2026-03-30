@@ -1,11 +1,11 @@
 import {mapToObj} from "./helpers";
 
-export interface MoltenDBOptions {
+export interface MoltenDbOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
 }
 
-export interface DBEvent {
+export interface DbEvent {
   type: 'event';
   event: 'change' | 'delete' | 'drop';
   collection: string;
@@ -13,7 +13,7 @@ export interface DBEvent {
   new_v: number | null;
 }
 
-export class MoltenDB {
+export class MoltenDb {
   readonly dbName: string;
   readonly workerUrl?: string | URL;
   worker: Worker | null = null;
@@ -25,12 +25,12 @@ export class MoltenDB {
   private bc!: BroadcastChannel;
 
   /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
-  public onEvent?: (event: DBEvent) => void;
+  public onEvent?: (event: DbEvent) => void;
 
   // ── Multi-Subscriber Event System ──────────────────────────────────────────
-  private eventListeners = new Set<(event: DBEvent) => void>();
+  private eventListeners = new Set<(event: DbEvent) => void>();
 
-  constructor(dbName = 'moltendb', options: MoltenDBOptions = {}) {
+  constructor(dbName = 'moltendb', options: MoltenDbOptions = {}) {
     this.dbName = dbName;
     this.workerUrl = options.workerUrl;
   }
@@ -39,23 +39,23 @@ export class MoltenDB {
    * ⚡ Subscribe to real-time DB mutations.
    * @returns An unsubscribe function to prevent memory leaks in UI frameworks.
    */
-  subscribe(listener: (event: DBEvent) => void): () => void {
+  subscribe(listener: (event: DbEvent) => void): () => void {
     this.eventListeners.add(listener);
     return () => this.eventListeners.delete(listener);
   }
 
   /** Manually remove a specific listener */
-  unsubscribe(listener: (event: DBEvent) => void): void {
+  unsubscribe(listener: (event: DbEvent) => void): void {
     this.eventListeners.delete(listener);
   }
 
-  private dispatchEvent(event: DBEvent) {
+  private dispatchEvent(event: DbEvent) {
     // Fire all subscribed component handlers
     for (const listener of this.eventListeners) {
       try {
         listener(event);
       } catch (err) {
-        console.error('[MoltenDB] Error in subscribed listener', err);
+        console.error('[MoltenDb] Error in subscribed listener', err);
       }
     }
   }
@@ -84,7 +84,7 @@ export class MoltenDB {
           resolveInit();
 
           navigator.locks.request(`moltendb_lock_${this.dbName}`, async () => {
-            console.log(`[MoltenDB] Promoting this tab to Leader.`);
+            console.log(`[MoltenDb] Promoting this tab to Leader.`);
             await this.startAsLeader();
             return new Promise(() => {}); // Hold lock
           });
@@ -99,7 +99,7 @@ export class MoltenDB {
       await navigator.storage.getDirectory();
     } catch {
       throw new Error(
-          '[MoltenDB] Origin Private File System (OPFS) is not available in this browser context. ' +
+          '[MoltenDb] Origin Private File System (OPFS) is not available in this browser context. ' +
           'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
       );
     }
@@ -182,7 +182,7 @@ export class MoltenDB {
         const timer = setTimeout(() => {
           if (this.pendingRequests.has(id)) {
             this.pendingRequests.delete(id);
-            reject(new Error(`[MoltenDB] Request "${action}" timed out.`));
+            reject(new Error(`[MoltenDb] Request "${action}" timed out.`));
           }
         }, 10000);
 

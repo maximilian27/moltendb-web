@@ -1,5 +1,5 @@
 import { inject, signal, effect, Signal, untracked } from '@angular/core';
-import { MoltenDBClient } from '@moltendb-web/query';
+import { MoltenDbClient } from '@moltendb-web/query';
 import { MoltenDbService } from './moltendb.service';
 
 export interface MoltenDbResource<T> {
@@ -15,7 +15,7 @@ export interface MoltenDbResource<T> {
 
 export function moltenDbResource<T>(
     collection: string,
-    queryFn: (client: MoltenDBClient) => Promise<T>
+    queryFn: (client: MoltenDbClient) => Promise<T>
 ): MoltenDbResource<T> {
   const molten = inject(MoltenDbService);
 

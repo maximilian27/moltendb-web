@@ -1,5 +1,5 @@
 /**
- * MoltenDB — Playwright multi-tab E2E tests
+ * MoltenDb — Playwright multi-tab E2E tests
  *
  * These tests open real Chromium browser tabs against a Vite dev server that
  * serves the compiled dist/ artifacts (index.js + moltendb-worker.js + WASM).
@@ -16,7 +16,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const URL = 'http://localhost:5173';
 
-/** Navigate to the fixture page and wait until MoltenDB has finished init(). */
+/** Navigate to the fixture page and wait until MoltenDb has finished init(). */
 async function openTab(context: import('@playwright/test').BrowserContext): Promise<Page> {
   const page = await context.newPage();
   await page.goto(URL);

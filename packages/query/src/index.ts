@@ -1,5 +1,5 @@
-// ─── MoltenDB Query Builder ───────────────────────────────────────────────────
-// Chainable, type-safe query builder for MoltenDB.
+// ─── MoltenDb Query Builder ───────────────────────────────────────────────────
+// Chainable, type-safe query builder for MoltenDb.
 //
 // Each operation has its own builder class that only exposes the methods
 // that are valid for that operation — matching the server's allowed-property
@@ -13,7 +13,7 @@
 //
 // Usage (vanilla JS or TypeScript):
 //
-//   const db = new MoltenDBClient(worker);
+//   const db = new MoltenDbClient(worker);
 //
 //   // GET — chainable query
 //   const results = await db.collection('laptops')
@@ -51,7 +51,7 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-/** A document stored in MoltenDB — any object with string keys. */
+/** A document stored in MoltenDb — any object with string keys. */
 export type Document = { [key: string]: JsonValue };
 
 /** A map of document key → document body used in set/update payloads. */
@@ -114,7 +114,7 @@ export type ExtendsMap = { [alias: string]: string };
 // ── Transport interface ───────────────────────────────────────────────────────
 
 /**
- * The transport layer used by MoltenDBClient to send messages.
+ * The transport layer used by MoltenDbClient to send messages.
  * Implement this interface to connect the query builder to any backend:
  *   - A Web Worker (WASM in-browser)
  *   - A fetch-based HTTP client
@@ -447,7 +447,7 @@ export class DeleteQuery {
 
 /**
  * A handle to a specific collection.
- * Returned by `MoltenDBClient.collection(name)`.
+ * Returned by `MoltenDbClient.collection(name)`.
  * Use it to start any of the four operation builders.
  */
 export class CollectionHandle {
@@ -507,20 +507,20 @@ export class CollectionHandle {
   }
 }
 
-// ─── MoltenDBClient ───────────────────────────────────────────────────────────
+// ─── MoltenDbClient ───────────────────────────────────────────────────────────
 
 /**
- * The main entry point for the MoltenDB query builder.
+ * The main entry point for the MoltenDb query builder.
  *
  * Accepts any {@link MoltenTransport} implementation — use {@link WorkerTransport}
- * to connect to a MoltenDB WASM Web Worker, or provide your own transport
+ * to connect to a MoltenDb WASM Web Worker, or provide your own transport
  * for HTTP, WebSocket, or testing.
  *
  * @example
  * // Browser + WASM Web Worker
  * const worker = new Worker('./moltendb-worker.js', { type: 'module' });
  * const transport = new WorkerTransport(worker);
- * const db = new MoltenDBClient(transport);
+ * const db = new MoltenDbClient(transport);
  *
  * const results = await db.collection('laptops')
  *   .get()
@@ -529,7 +529,7 @@ export class CollectionHandle {
  *   .count(5)
  *   .exec();
  */
-export class MoltenDBClient {
+export class MoltenDbClient {
   private transport: MoltenTransport;
 
   constructor(transport: MoltenTransport) {

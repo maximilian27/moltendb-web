@@ -1,12 +1,12 @@
 # @moltendb-web/query
 
-Type-safe, chainable query builder for [MoltenDB](https://github.com/maximilian27/MoltenDB).
+Type-safe, chainable query builder for [MoltenDb](https://github.com/maximilian27/MoltenDb).
 
 Works in vanilla JavaScript and TypeScript. Compiles as an npm module (CJS + ESM + `.d.ts`).
 
 ### 🌋 Explore the Full Functionality
 
-The best way to experience the MoltenDB query builder is through our **[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)**. It contains a complete, live environment where you can test query builder expressions, perform mutations, and see real-time events without any local setup.
+The best way to experience the MoltenDb query builder is through our **[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)**. It contains a complete, live environment where you can test query builder expressions, perform mutations, and see real-time events without any local setup.
 
 ---
 
@@ -21,15 +21,15 @@ npm install @moltendb-web/query
 ## Quick start
 
 ```ts
-import { MoltenDB } from '@moltendb-web/core';
-import { MoltenDBClient, WorkerTransport } from '@moltendb-web/query';
+import { MoltenDb } from '@moltendb-web/core';
+import { MoltenDbClient, WorkerTransport } from '@moltendb-web/query';
 
 // 1. Initialize the Core Engine (boots WASM worker)
-const db = new MoltenDB('moltendb_demo');
+const db = new MoltenDb('moltendb_demo');
 await db.init();
 
 // 2. Connect the Query Builder to the worker
-const client = new MoltenDBClient(db);
+const client = new MoltenDbClient(db);
 
 // SET — insert / upsert
 await client.collection('laptops')
@@ -196,7 +196,7 @@ await client.collection('laptops')
 Implement `MoltenTransport` to connect to any backend:
 
 ```ts
-import { MoltenTransport, MoltenDBClient, Document, JsonValue } from '@moltendb-web/query';
+import { MoltenTransport, MoltenDbClient, Document, JsonValue } from '@moltendb-web/query';
 
 class FetchTransport implements MoltenTransport {
   constructor(private baseUrl: string, private token: string) {}
@@ -214,7 +214,7 @@ class FetchTransport implements MoltenTransport {
   }
 }
 
-const db = new MoltenDBClient(new FetchTransport('[https://api.mydomain.com](https://api.mydomain.com)', myToken));
+const db = new MoltenDbClient(new FetchTransport('[https://api.mydomain.com](https://api.mydomain.com)', myToken));
 ```
 
 ---

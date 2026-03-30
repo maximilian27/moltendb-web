@@ -1,12 +1,12 @@
-# MoltenDB Web
+# MoltenDb Web
 
 <div align="center">
-  <img src="../../assets/logo.png" alt="MoltenDB Logo" width="64"/>
+  <img src="../../assets/logo.png" alt="MoltenDb Logo" width="64"/>
 
   ### 🌋 The Embedded Database for the Modern Web
   **High-performance Rust engine compiled to WASM. Persistent storage via OPFS.**
 
-  [Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json) • [Core Engine](https://www.npmjs.com/package/@moltendb-web/core) • [Query Builder](https://www.npmjs.com/package/@moltendb-web/query) • [Original Repository](https://github.com/maximilian27/MoltenDB) • [License](LICENSE.md)
+  [Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json) • [Core Engine](https://www.npmjs.com/package/@moltendb-web/core) • [Query Builder](https://www.npmjs.com/package/@moltendb-web/query) • [Original Repository](https://github.com/maximilian27/MoltenDb) • [License](LICENSE.md)
 
   [![NPM Version](https://img.shields.io/npm/v/@moltendb-web/core?style=flat-square&color=orange)](https://www.npmjs.com/package/@moltendb-web/core)
   [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE.md)
@@ -17,15 +17,15 @@
 
 ---
 
-## What is MoltenDB Web?
+## What is MoltenDb Web?
 
-MoltenDB is a JSON document database written in Rust that runs directly in your browser. Unlike traditional browser databases limited by `localStorage` quotas or IndexedDB's complex API, MoltenDB leverages the **Origin Private File System (OPFS)** to provide a high-performance, append-only storage engine.
+MoltenDb is a JSON document database written in Rust that runs directly in your browser. Unlike traditional browser databases limited by `localStorage` quotas or IndexedDB's complex API, MoltenDb leverages the **Origin Private File System (OPFS)** to provide a high-performance, append-only storage engine.
 
 > **🚀 Release Candidate** — The core engine, multi-tab sync, and storage layer are feature-complete and stabilised for v1. Server sync, encryption and analytics are planned for a future release.
 
 ### 🎮 Explore the Full Functionality
 
-The best way to experience MoltenDB is through the **[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)**. It provides a complete, live environment where you can test query builder expressions, perform mutations, and see real-time events with zero local setup.
+The best way to experience MoltenDb is through the **[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)**. It provides a complete, live environment where you can test query builder expressions, perform mutations, and see real-time events with zero local setup.
 
 Prefer to run it in your own environment? You can **[clone the demo repository](https://github.com/maximilian27/moltendb-wasm-demo)** to inspect the source code, run the explorers locally, and experiment with your own schema.
 
@@ -47,7 +47,7 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 
 ## Installation
 
-MoltenDB is split into two packages: the core engine and the type-safe, chainable query builder.
+MoltenDb is split into two packages: the core engine and the type-safe, chainable query builder.
 
 ```bash
 # Install the core engine and WASM artifacts
@@ -58,7 +58,7 @@ npm install @moltendb-web/query
 ```
 📦 **Bundler Setup**
 
-MoltenDB handles its own Web Workers and WASM loading automatically. However, depending on your build tool, you may need a tiny config tweak to ensure it serves the static files correctly.
+MoltenDb handles its own Web Workers and WASM loading automatically. However, depending on your build tool, you may need a tiny config tweak to ensure it serves the static files correctly.
 
 **For Vite:**
 Exclude the core package from pre-bundling in your vite.config.js:
@@ -85,17 +85,17 @@ module.exports = {
 # Quick Start
 1. Initialize the Client
 
-MoltenDB handles the Web Worker and WASM instantiation for you.
+MoltenDb handles the Web Worker and WASM instantiation for you.
 TypeScript
 ```ts
-import { MoltenDB } from '@moltendb-web/core';
-import { MoltenDBClient, WorkerTransport } from '@moltendb-web/query';
+import { MoltenDb } from '@moltendb-web/core';
+import { MoltenDbClient, WorkerTransport } from '@moltendb-web/query';
 
-const db = new MoltenDB('moltendb_demo');
+const db = new MoltenDb('moltendb_demo');
 await db.init();
 
 // Connect the query builder to the WASM worker
-const client = new MoltenDBClient(db);
+const client = new MoltenDbClient(db);
 
 // 2. Insert and Query
 
@@ -200,7 +200,7 @@ await client.collection('laptops')
 
 // Supported Query Operators
 
-MoltenDB supports a variety of operators in the `where` clause:
+MoltenDb supports a variety of operators in the `where` clause:
 
 | Operator | Aliases | Description |
 |---|---|---|
@@ -248,14 +248,14 @@ await client.collection('laptops')
 
 ### How the Log Works
 
-MoltenDB uses an append-only JSON log. Every write is a new line, ensuring your data is safe even if the tab is closed unexpectedly.
+MoltenDb uses an append-only JSON log. Every write is a new line, ensuring your data is safe even if the tab is closed unexpectedly.
 
 - **Automatic Compaction:** When the log exceeds **500 entries or 5 MB**, the engine automatically "squashes" the log, removing superseded document versions to reclaim space. No manual `compact()` calls are needed in normal operation.
 - **Persistence:** All data is stored in the Origin Private File System (OPFS). This is a special file system for web apps that provides much higher performance than IndexedDB.
 
 ### Multi-Tab Sync
 
-MoltenDB uses the **Web Locks API** for leader election. The first tab to acquire the lock becomes the *leader* and owns the OPFS file handle directly. Every subsequent tab becomes a *follower* and proxies all reads and writes through a `BroadcastChannel` to the leader.
+MoltenDb uses the **Web Locks API** for leader election. The first tab to acquire the lock becomes the *leader* and owns the OPFS file handle directly. Every subsequent tab becomes a *follower* and proxies all reads and writes through a `BroadcastChannel` to the leader.
 
 When the leader tab is closed, the next queued follower automatically acquires the lock and promotes itself to leader — no data loss, no manual reconnection required.
 
@@ -268,12 +268,12 @@ Tab 1 (Leader) ──owns──▶ Web Worker ──▶ WASM Engine ──▶ OP
 
 ### Real-Time Events (Pub/Sub)
 
-MoltenDB has a built-in pub/sub system that automatically notifies **all open tabs** whenever a document is created, updated, or deleted — no polling required.
+MoltenDb has a built-in pub/sub system that automatically notifies **all open tabs** whenever a document is created, updated, or deleted — no polling required.
 
 You can attach multiple independent listeners using the subscribe() method, making it trivial to keep different UI components (like React hooks or Angular signals) in sync without memory leaks:
 
 ```ts
-const db = new MoltenDB('my-app');
+const db = new MoltenDb('my-app');
 await db.init();
 
 // Attach a listener (Returns an unsubscribe function)
@@ -301,9 +301,9 @@ db.subscribe(({ event, collection, key }) => {
 The `DBEvent` type is exported from the package for full TypeScript support:
 
 ```ts
-import { MoltenDB, DBEvent } from '@moltendb-web/core';
+import { MoltenDb, DBEvent } from '@moltendb-web/core';
 
-const db = new MoltenDB('my-app');
+const db = new MoltenDb('my-app');
 await db.init();
 
 db.subscribe((e: DBEvent) => { /* fully typed */ });```
@@ -312,7 +312,7 @@ db.subscribe((e: DBEvent) => { /* fully typed */ });```
 
 ### Performance Note
 
-Because MoltenDB uses OPFS, your browser must support `SharedArrayBuffer`. Most modern browsers support this, but your server must send the following headers:
+Because MoltenDb uses OPFS, your browser must support `SharedArrayBuffer`. Most modern browsers support this, but your server must send the following headers:
 
 ```http
 Cross-Origin-Opener-Policy: same-origin
@@ -356,7 +356,7 @@ npm run test:coverage # with coverage report
 
 This monorepo contains the following packages:
 
-- **`packages/core`:** The core WASM engine, Web Worker logic, and the MoltenDB main client.
+- **`packages/core`:** The core WASM engine, Web Worker logic, and the MoltenDb main client.
 - **`packages/query`:** The type-safe, chainable Query Builder.
 
 ## Roadmap
@@ -366,7 +366,7 @@ This monorepo contains the following packages:
 - [x] **Rich Test Suite:** 50 unit, integration, and stress tests via Vitest — **stabilised in RC1**.
 - [ ] **React Adapter:** Official `@moltendb-web/react` package with `useQuery` hooks and real-time context providers.
 - [ ] **Angular Adapter:** Official `@moltendb-web/angular` package featuring RxJS observables and Signal-based data fetching.
-- [ ] **Delta Sync:** Automatic two-way sync with the MoltenDB Rust server.
+- [ ] **Delta Sync:** Automatic two-way sync with the MoltenDb Rust server.
 - [ ] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Web Crypto API).
 - [ ] **Analytics Functionality:** Run complex analytics queries straight in the browser without blocking the UI.
 
@@ -379,8 +379,8 @@ Found a bug or have a feature request? Please open an issue on the [GitHub issue
 
 ## License
 
-The MoltenDB Web packages (`@moltendb-web/core` and `@moltendb-web/query`) are licensed under the MIT License.
+The MoltenDb Web packages (`@moltendb-web/core` and `@moltendb-web/query`) are licensed under the MIT License.
 
-The **MoltenDB Server** (Rust backend) remains under the Business Source License 1.1 (Free for organizations under $5M revenue, requires a license for managed services).
+The **MoltenDb Server** (Rust backend) remains under the Business Source License 1.1 (Free for organizations under $5M revenue, requires a license for managed services).
 
 For commercial licensing or questions: [maximilian.both27@outlook.com](mailto:maximilian.both27@outlook.com)

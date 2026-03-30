@@ -1,5 +1,5 @@
 /**
- * MoltenDB core — unit & integration test suite
+ * MoltenDb core — unit & integration test suite
  *
  * All browser APIs (Worker, BroadcastChannel, navigator.locks) are replaced
  * with in-process fakes so the tests run in Node/Vitest without a real browser
@@ -7,7 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MoltenDB } from '../index.js';
+import { MoltenDb } from '../index.js';
 import {
   FakeWorker,
   getWorker,
@@ -18,19 +18,19 @@ import {
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-/** Boot a MoltenDB instance that wins the leader election immediately. */
-async function makeLeader(dbName = 'test-db', options = {}): Promise<MoltenDB> {
-  const db = new MoltenDB(dbName, { workerUrl: '/fake-worker.js', ...options });
+/** Boot a MoltenDb instance that wins the leader election immediately. */
+async function makeLeader(dbName = 'test-db', options = {}): Promise<MoltenDb> {
+  const db = new MoltenDb(dbName, { workerUrl: '/fake-worker.js', ...options });
   await db.init();
   return db;
 }
 
 /**
- * Boot a second MoltenDB instance that loses the leader election and becomes
+ * Boot a second MoltenDb instance that loses the leader election and becomes
  * a follower. The leader must already be initialised before calling this.
  */
-async function makeFollower(dbName = 'test-db'): Promise<MoltenDB> {
-  const db = new MoltenDB(dbName, { workerUrl: '/fake-worker.js' });
+async function makeFollower(dbName = 'test-db'): Promise<MoltenDb> {
+  const db = new MoltenDb(dbName, { workerUrl: '/fake-worker.js' });
   await db.init();
   return db;
 }
@@ -52,7 +52,7 @@ afterEach(() => {
 
 describe('init()', () => {
   it('resolves without throwing when the worker responds ok', async () => {
-    const db = new MoltenDB('db', { workerUrl: '/fake-worker.js' });
+    const db = new MoltenDb('db', { workerUrl: '/fake-worker.js' });
     await expect(db.init()).resolves.toBeUndefined();
   });
 
@@ -76,12 +76,12 @@ describe('init()', () => {
       return w;
     });
 
-    const db = new MoltenDB('db', { workerUrl: '/fake-worker.js' });
+    const db = new MoltenDb('db', { workerUrl: '/fake-worker.js' });
     await expect(db.init()).rejects.toThrow('WASM init failed');
   });
 
   it('is safe to call init() twice (idempotent guard)', async () => {
-    const db = new MoltenDB('db', { workerUrl: '/fake-worker.js' });
+    const db = new MoltenDb('db', { workerUrl: '/fake-worker.js' });
     await db.init();
     // Second call should not throw or create a second worker
     await expect(db.init()).resolves.toBeUndefined();
@@ -452,7 +452,7 @@ describe('BroadcastChannel name isolation', () => {
   it('two databases with different names do not share data', async () => {
     const dbA = await makeLeader('db-alpha');
     // Need a fresh lock slot for db-beta
-    const dbB = new MoltenDB('db-beta', { workerUrl: '/fake-worker.js' });
+    const dbB = new MoltenDb('db-beta', { workerUrl: '/fake-worker.js' });
     await dbB.init();
 
     await dbA.set('col', 'shared-key', { owner: 'alpha' });
@@ -463,7 +463,7 @@ describe('BroadcastChannel name isolation', () => {
 
   it('two databases with different names can both be leaders simultaneously', async () => {
     const dbA = await makeLeader('iso-a');
-    const dbB = new MoltenDB('iso-b', { workerUrl: '/fake-worker.js' });
+    const dbB = new MoltenDb('iso-b', { workerUrl: '/fake-worker.js' });
     await dbB.init();
 
     expect(dbA.isLeader).toBe(true);

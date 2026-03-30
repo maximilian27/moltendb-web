@@ -1,8 +1,8 @@
 /**
- * Test helpers & mocks for MoltenDB unit tests.
+ * Test helpers & mocks for MoltenDb unit tests.
  *
  * We cannot run a real WASM Worker in Vitest/happy-dom, so we replace the
- * three browser primitives that MoltenDB depends on:
+ * three browser primitives that MoltenDb depends on:
  *
  *   • Worker              – fake message-passing with a controllable handler
  *   • BroadcastChannel    – in-process pub/sub bus shared across instances
@@ -54,7 +54,7 @@ export function resetBCBus(): void {
 /**
  * A controllable fake Worker.
  *
- * By default it behaves like a healthy MoltenDB worker:
+ * By default it behaves like a healthy MoltenDb worker:
  *   - 'init'   → { status: 'ok' }
  *   - 'set'    → null
  *   - 'get'    → the value previously stored via 'set'
