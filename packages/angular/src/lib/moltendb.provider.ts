@@ -1,7 +1,7 @@
 import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from '@angular/core';
-import { MoltenDBOptions } from '@moltendb-web/core';
+import { MoltenDbOptions } from '@moltendb-web/core';
 
-export interface AngularMoltenDbOptions extends MoltenDBOptions {
+export interface AngularMoltenDbOptions extends MoltenDbOptions {
   name: string;
 }
 

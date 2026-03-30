@@ -1,13 +1,13 @@
-# MoltenDB Web
+# MoltenDb Web
 
 <div align="center">
-  <img src="assets/logo.png" alt="MoltenDB Logo" width="64"/>
+  <img src="assets/logo.png" alt="MoltenDb Logo" width="64"/>
 
   ### 🌋 The Embedded Database for the Modern Web
 
-  **This is the monorepo for MoltenDB Web — a high-performance Rust engine compiled to WASM with persistent storage via OPFS.**
+  **This is the monorepo for MoltenDb Web — a high-performance Rust engine compiled to WASM with persistent storage via OPFS.**
 
-  [Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json) • [Original Repository](https://github.com/maximilian27/MoltenDB) • [License](LICENSE.md)
+  [Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json) • [Original Repository](https://github.com/maximilian27/MoltenDb) • [License](LICENSE.md)
 
   [![NPM Version](https://img.shields.io/npm/v/@moltendb-web/core?style=flat-square&color=orange)](https://www.npmjs.com/package/@moltendb-web/core)
   [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE.md)

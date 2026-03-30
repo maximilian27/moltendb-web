@@ -20,7 +20,7 @@ self.onmessage = async (e: MessageEvent) => {
             const eventData = JSON.parse(eventStr);
             self.postMessage({ type: 'event', ...eventData });
           } catch (err) {
-            console.error('[MoltenDB Worker] Event parse error', err);
+            console.error('[MoltenDb Worker] Event parse error', err);
           }
         });
 

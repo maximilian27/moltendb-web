@@ -10,3 +10,4 @@
 /packages/query/dist/
 /packages/core/dist/
 
+/packages/query/node_modules/

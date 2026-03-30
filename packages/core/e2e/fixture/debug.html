@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8" /><title>MoltenDB Debug</title></head>
+<head><meta charset="UTF-8" /><title>MoltenDb Debug</title></head>
 <body>
 <pre id="out">running…</pre>
 <script type="module">
-  import init, { WorkerDb } from '../../dist/moltendb.js';
+  import init, { WorkerDb } from '../../dist/wasm/moltendb.js';
 
   const log = (...args) => {
     document.getElementById('out').textContent += '\n' + args.map(a => JSON.stringify(a, null, 2)).join(' ');
