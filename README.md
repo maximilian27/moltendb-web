@@ -24,3 +24,4 @@ This monorepo contains the following packages. Please refer to their individual 
 |---------|-------------|--------|
 | [`@moltendb-web/core`](packages/core) | Core WASM engine — low-level database bindings | [README](packages/core/README.md) |
 | [`@moltendb-web/query`](packages/query) | Query builder — ergonomic API on top of core | [README](packages/query/README.md) |
+| [`@moltendb-web/angular`](packages/angular) | Angular integration — reactive Signals, resources, and DI | [README](packages/angular/README.md) |
