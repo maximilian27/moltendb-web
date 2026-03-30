@@ -16,9 +16,9 @@
     "build:all": "npm run build:core && npm run build:query && npm run build:angular"
   },
   "devDependencies": {
-    "@moltendb-web/core": "^1.0.0-rc.3"
+    "@moltendb-web/core": "^1.0.0-rc.5"
   },
   "dependencies": {
-    "@moltendb-web/query": "^1.0.0-rc.3"
+    "@moltendb-web/query": "^1.0.0-rc.4"
   }
 }
