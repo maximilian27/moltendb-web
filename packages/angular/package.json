@@ -15,7 +15,9 @@
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "@angular/core": ">=16.0.0",
+    "@angular/core": ">=17.0.0"
+  },
+  "dependencies": {
     "@moltendb-web/core": "^1.0.0",
     "@moltendb-web/query": "^1.0.0"
   },

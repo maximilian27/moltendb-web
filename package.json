@@ -17,6 +17,7 @@
     "build:all": "npm run build:core && npm run build:query && npm run build:angular"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "@moltendb-web/core": "^1.0.0"
   },
   "dependencies": {
