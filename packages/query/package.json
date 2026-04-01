@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/query",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Type-safe query builder for MoltenDb — chainable API for get, set, update and delete operations.",
   "author": "Maximilian Both <maximilian.both27@outlook.com>",
   "main": "./dist/index.js",
@@ -27,7 +27,13 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["moltendb", "database", "query-builder", "nosql", "wasm"],
+  "keywords": [
+    "moltendb",
+    "database",
+    "query-builder",
+    "nosql",
+    "wasm"
+  ],
   "license": "MIT",
   "devDependencies": {
     "typescript": "^6.0.2"

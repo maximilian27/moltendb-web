@@ -9,7 +9,7 @@ This package bridges the gap between MoltenDb's powerful Web Worker/WASM engine 
 ## Installation
 
 ```bash
-npm install @moltendb-web/core @moltendb-web/query @moltendb-web/angular
+npm install @moltendb-web/angular
 ```
 
 ---
