@@ -7,6 +7,8 @@
 
   **This is the monorepo for MoltenDb Web — a high-performance Rust engine compiled to WASM with persistent storage via OPFS.**
 
+  **Use it as a full-featured embedded database *or* as a persistent state manager — your app's data survives page reloads, browser crashes, and unexpected connection loss automatically.**
+
   [Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json) • [Original Repository](https://github.com/maximilian27/MoltenDb) • [License](LICENSE.md)
 
   [![NPM Version](https://img.shields.io/npm/v/@moltendb-web/core?style=flat-square&color=orange)](https://www.npmjs.com/package/@moltendb-web/core)

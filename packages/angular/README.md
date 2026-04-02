@@ -4,6 +4,8 @@ The official Angular integration for MoltenDb, providing a seamless, highly reac
 
 This package bridges the gap between MoltenDb's powerful Web Worker/WASM engine and your Angular UI, offering auto-updating data resources, built-in loading states, and elegant functional dependency injection.
 
+Beyond querying a database, you can use MoltenDb as a **persistent state manager** for your Angular application. Because all state is written to OPFS, it survives page reloads, browser crashes, and unexpected connection loss — your users will never lose their work.
+
 > **Requirements:** Angular **17 or higher** is required. This library uses Angular Signals and standalone APIs introduced in Angular 17. If this library generates enough interest, a legacy Angular library using RxJS may be created in the future.
 
 ---

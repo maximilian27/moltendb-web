@@ -1,5 +1,14 @@
 # @moltendb-web/angular
 
+## 1.1.2
+
+### Patch Changes
+
+- 4dc09c8: Enhance docs, describe state manangement usability
+- Updated dependencies [4dc09c8]
+  - @moltendb-web/core@1.1.2
+  - @moltendb-web/query@1.1.2
+
 ## 1.1.1
 
 ### Patch Changes

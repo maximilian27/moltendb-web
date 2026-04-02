@@ -21,6 +21,8 @@
 
 MoltenDb is a JSON document database written in Rust that runs directly in your browser. Unlike traditional browser databases limited by `localStorage` quotas or IndexedDB's complex API, MoltenDb leverages the **Origin Private File System (OPFS)** to provide a high-performance, append-only storage engine.
 
+Beyond being a full-featured embedded database, MoltenDb can also serve as a **persistent state manager** for your application. Because all data is written to OPFS, your app's state survives page reloads, browser crashes, and unexpected connection loss — your users will never lose their work.
+
 > **🚀 Release Candidate** — The core engine, multi-tab sync, and storage layer are feature-complete and stabilised for v1. Server sync, encryption and analytics are planned for a future release.
 
 ### 🎮 Explore the Full Functionality
