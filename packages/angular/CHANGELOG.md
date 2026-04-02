@@ -1,5 +1,13 @@
 # @moltendb-web/angular
 
+## 1.1.1
+
+### Patch Changes
+
+- 7dcabd4: Update docs to better reflect the demos
+  - @moltendb-web/core@1.1.1
+  - @moltendb-web/query@1.1.1
+
 ## 1.1.0
 
 ### Minor Changes
