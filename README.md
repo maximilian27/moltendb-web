@@ -16,6 +16,30 @@
 
 ---
 
+## Demos
+
+### 🔬 Interactive Query Demo (Core & Query packages)
+
+Explore the full MoltenDb query builder in a live, zero-setup environment:
+
+- ⚡ **StackBlitz:** [Open Interactive Demo](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)
+
+This demo lets you test the full query builder API — `get()`, `set()`, `update()`, `delete()`, `.where()`, `.fields()`, `.sort()`, `.joins()`, and more — directly in the browser against a real WASM-powered MoltenDb instance.
+
+### 🅰️ Angular Demo App
+
+A real-world Angular application showcasing the `@moltendb-web/angular` integration:
+
+- 🔗 **Demo repo:** [github.com/maximilian27/moltendb-angular](https://github.com/maximilian27/moltendb-angular)
+- ⚡ **StackBlitz:** [Open in StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-angular)
+- 🌐 **Live demo:** [moltendb-angular.maximilian-both27.workers.dev/laptops](https://moltendb-angular.maximilian-both27.workers.dev/laptops)
+
+The demo app showcases two real-world scenarios:
+- **`/laptops`** — A fully-featured data table with filtering, sorting, column visibility, field projection, and reactive summary stats using `moltenDbResource`.
+- **`/stress-test`** — A benchmarking page measuring MoltenDB CRUD performance (bulk writes, reads, filtered/sorted queries, updates, and deletes) displayed as ops/sec.
+
+---
+
 ## Packages
 
 This monorepo contains the following packages. Please refer to their individual READMEs for detailed documentation, usage examples, and API references.

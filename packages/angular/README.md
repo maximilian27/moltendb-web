@@ -4,6 +4,22 @@ The official Angular integration for MoltenDb, providing a seamless, highly reac
 
 This package bridges the gap between MoltenDb's powerful Web Worker/WASM engine and your Angular UI, offering auto-updating data resources, built-in loading states, and elegant functional dependency injection.
 
+> **Requirements:** Angular **17 or higher** is required. This library uses Angular Signals and standalone APIs introduced in Angular 17. If this library generates enough interest, a legacy Angular library using RxJS may be created in the future.
+
+---
+
+## Demo
+
+See the library in action with a real-world demo application:
+
+- 🔗 **Demo repo:** [github.com/maximilian27/moltendb-angular](https://github.com/maximilian27/moltendb-angular)
+- ⚡ **StackBlitz:** [Open in StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-angular)
+- 🌐 **Live demo:** [moltendb-angular.maximilian-both27.workers.dev/laptops](https://moltendb-angular.maximilian-both27.workers.dev/laptops)
+
+The demo app showcases two real-world scenarios:
+- **`/laptops`** — A fully-featured data table with filtering, sorting, column visibility, field projection, and reactive summary stats using `moltenDbResource`.
+- **`/stress-test`** — A benchmarking page measuring MoltenDB CRUD performance (bulk writes, reads, filtered/sorted queries, updates, and deletes) displayed as ops/sec.
+
 ---
 
 ## Installation
