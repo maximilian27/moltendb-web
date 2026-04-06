@@ -75,9 +75,15 @@ export interface WhereOperators {
 /**
  * A WHERE clause: each key is a field path (dot-notation supported),
  * and the value is either a plain value (implicit equality) or an operator object.
+ *
+ * Logical operators `$or` and `$and` accept an array of sub-clauses:
+ *   - `$or`  — at least one sub-clause must match
+ *   - `$and` — all sub-clauses must match
  */
 export type WhereClause = {
-  [field: string]: JsonValue | WhereOperators;
+  $or?: WhereClause[];
+  $and?: WhereClause[];
+  [field: string]: JsonValue | WhereOperators | WhereClause[] | undefined;
 };
 
 // ── Sort ──────────────────────────────────────────────────────────────────────
@@ -174,12 +180,15 @@ export class GetQuery {
    * Multiple conditions are combined with implicit AND.
    *
    * Supported operators: $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $contains
+   * Logical operators: $or (any sub-clause must match), $and (all sub-clauses must match)
    * Dot-notation is supported for nested fields.
    *
    * @example
    * .where({ brand: 'Apple' })
    * .where({ price: { $gt: 1000, $lt: 3000 } })
    * .where({ 'specs.cpu.brand': 'Intel', in_stock: true })
+   * .where({ $or: [{ brand: 'Apple' }, { brand: 'Dell' }] })
+   * .where({ $and: [{ in_stock: true }, { price: { $lt: 2000 } }] })
    */
   where(clause: WhereClause): this {
     this.payload['where'] = clause as unknown as JsonValue;
