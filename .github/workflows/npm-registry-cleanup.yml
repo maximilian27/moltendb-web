@@ -20,7 +20,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "Removing 'next' tag..."
-          npm dist-tag rm @moltendb-web/core@0.1.0-alpha.21 next
+          npm dist-tag rm @moltendb-web/core@0.1.0-alpha.21 alpha
 #          echo "Moving latest tag to alpha.11..."
 #          npm dist-tag add @moltendb-web/core@0.1.0-alpha.21 alpha
           
