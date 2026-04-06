@@ -20,8 +20,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "Nuking broken version ${{ github.event.inputs.broken_version }} from orbit..."
-          npm unpublish @moltendb-web/core@1.0.0-rc.2
+          npm unpublish @moltendb-web/core@0.1.0-alpha.21 
           
-          echo "Moving latest tag to alpha.11..."
-          npm dist-tag add @moltendb-web/core@0.1.0-alpha.21 alpha
+  
           
