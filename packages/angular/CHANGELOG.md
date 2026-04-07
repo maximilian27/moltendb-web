@@ -1,5 +1,17 @@
 # @moltendb-web/angular
 
+## 1.3.0
+
+### Minor Changes
+
+- a7a43e5: Allow case insensite searches
+
+### Patch Changes
+
+- Updated dependencies [a7a43e5]
+  - @moltendb-web/core@1.3.0
+  - @moltendb-web/query@1.3.0
+
 ## 1.2.0
 
 ### Patch Changes
