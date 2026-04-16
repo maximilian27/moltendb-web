@@ -1,5 +1,17 @@
 # @moltendb-web/angular
 
+## 1.4.0
+
+### Minor Changes
+
+- 81fd537: The way the rust binary is compiled was changed significantly in the core server repo. Update the naming conventions to match the latest distribution
+
+### Patch Changes
+
+- Updated dependencies [81fd537]
+  - @moltendb-web/core@1.4.0
+  - @moltendb-web/query@1.4.0
+
 ## 1.3.0
 
 ### Minor Changes
