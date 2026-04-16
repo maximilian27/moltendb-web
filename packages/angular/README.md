@@ -46,7 +46,7 @@ Update the `assets` array in your `angular.json` to include the MoltenDb distrib
     "output": "/"
   },
   {
-    "glob": "moltendb.js",
+    "glob": "moltendb_core.js",
     "input": "node_modules/@moltendb-web/core/dist/wasm",
     "output": "/wasm/"
   },
