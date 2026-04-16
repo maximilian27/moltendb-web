@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/core",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "MoltenDb WASM runtime — the database engine, Web Worker, and main-thread client in one package.",
   "type": "module",
   "author": "Maximilian Both <maximilian.both27@outlook.com>",
@@ -23,8 +23,8 @@
       "import": "./dist/moltendb-worker.js",
       "types": "./dist/moltendb-worker.d.ts"
     },
-    "./wasm": "./dist/wasm/moltendb.js",
-    "./wasm-bg": "./dist/wasm/moltendb_bg.wasm"
+    "./wasm": "./dist/wasm/moltendb_core.js",
+    "./wasm-bg": "./dist/wasm/moltendb_core_bg.wasm"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
