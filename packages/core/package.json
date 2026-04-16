@@ -23,8 +23,8 @@
       "import": "./dist/moltendb-worker.js",
       "types": "./dist/moltendb-worker.d.ts"
     },
-    "./wasm": "./dist/wasm/moltendb.js",
-    "./wasm-bg": "./dist/wasm/moltendb_bg.wasm"
+    "./wasm": "./dist/wasm/moltendb_core.js",
+    "./wasm-bg": "./dist/wasm/moltendb_core_bg.wasm"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
