@@ -1,5 +1,14 @@
 # @moltendb-web/angular
 
+## 1.4.1
+
+### Patch Changes
+
+- 74cb3c7: Update angular package readme to reflect latest setup
+- Updated dependencies [74cb3c7]
+  - @moltendb-web/core@1.4.1
+  - @moltendb-web/query@1.4.1
+
 ## 1.4.0
 
 ### Minor Changes
