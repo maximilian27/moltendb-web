@@ -14,6 +14,7 @@
  *   3. Convert the result back to JsValue for JavaScript.
  */
 export class WorkerDb {
+    private constructor();
     free(): void;
     [Symbol.dispose](): void;
     /**
@@ -39,6 +40,25 @@ export class WorkerDb {
      */
     analytics(query_json: string): string;
     /**
+     * Initialize the database and open (or create) the OPFS storage file.
+     *
+     * Called from JavaScript as:
+     *   `const db = await WorkerDb.create("click_analytics_db")`
+     *
+     * A named static factory function is used instead of an async constructor
+     * because `#[wasm_bindgen(constructor)]` with `async fn` produces invalid
+     * TypeScript bindings and is deprecated in wasm-bindgen.
+     *
+     * `async` because opening the OPFS file handle is an async browser API.
+     * Returns `Result<WorkerDb, JsValue>` — on error, the JsValue becomes a
+     * JavaScript exception that the worker's try/catch can handle.
+     *
+     * # Arguments
+     * * `db_name` — The name of the OPFS file to open (e.g. "click_analytics_db").
+     *   Each unique name is a separate database file in the browser's OPFS storage.
+     */
+    static create(db_name: string): Promise<WorkerDb>;
+    /**
      * Route an incoming message from the JavaScript worker to the correct handler.
      *
      * Called from moltendb-worker.js as:
@@ -59,24 +79,6 @@ export class WorkerDb {
      */
     handle_message(data: any): any;
     /**
-     * Initialize the database and open (or create) the OPFS storage file.
-     *
-     * This is the constructor — called from JavaScript as:
-     *   `const db = await new WorkerDb("click_analytics_db")`
-     *
-     * `#[wasm_bindgen(constructor)]` tells wasm-bindgen that this function
-     * is the JavaScript `new WorkerDb(...)` constructor.
-     *
-     * `async` because opening the OPFS file handle is an async browser API.
-     * Returns `Result<WorkerDb, JsValue>` — on error, the JsValue becomes a
-     * JavaScript exception that the worker's try/catch can handle.
-     *
-     * # Arguments
-     * * `db_name` — The name of the OPFS file to open (e.g. "click_analytics_db").
-     *   Each unique name is a separate database file in the browser's OPFS storage.
-     */
-    constructor(db_name: string);
-    /**
      * Subscribe to real-time database changes.
      * The provided JavaScript function will be called with a JSON string
      * representing the mutation event.
@@ -89,21 +91,18 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_workerdb_free: (a: number, b: number) => void;
-    readonly workerdb_analytics: (a: number, b: number, c: number) => [number, number];
-    readonly workerdb_handle_message: (a: number, b: any) => [number, number, number];
-    readonly workerdb_new: (a: number, b: number) => any;
-    readonly workerdb_subscribe: (a: number, b: any) => void;
-    readonly wasm_bindgen__closure__destroy__hd467cd5df2070873: (a: number, b: number) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__hfcbb4037b8cae583: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h23a1582ccafe3e3c: (a: number, b: number, c: any, d: any) => void;
-    readonly __wbindgen_malloc: (a: number, b: number) => number;
-    readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-    readonly __wbindgen_exn_store: (a: number) => void;
-    readonly __externref_table_alloc: () => number;
-    readonly __wbindgen_externrefs: WebAssembly.Table;
-    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-    readonly __externref_table_dealloc: (a: number) => void;
-    readonly __wbindgen_start: () => void;
+    readonly workerdb_analytics: (a: number, b: number, c: number, d: number) => void;
+    readonly workerdb_create: (a: number, b: number) => number;
+    readonly workerdb_handle_message: (a: number, b: number, c: number) => void;
+    readonly workerdb_subscribe: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3672: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3755: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3766: (a: number, b: number, c: number, d: number) => void;
+    readonly __wbindgen_export: (a: number, b: number) => number;
+    readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
+    readonly __wbindgen_export3: (a: number) => void;
+    readonly __wbindgen_export4: (a: number, b: number, c: number) => void;
+    readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
