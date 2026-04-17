@@ -1,5 +1,14 @@
 # @moltendb-web/angular
 
+## 1.4.2
+
+### Patch Changes
+
+- 598ca0b: replace depracted new worker db constructor with create
+- Updated dependencies [598ca0b]
+  - @moltendb-web/core@1.4.2
+  - @moltendb-web/query@1.4.2
+
 ## 1.4.1
 
 ### Patch Changes
