@@ -12,8 +12,7 @@ self.onmessage = async (e: MessageEvent) => {
       initPromise = (async () => {
         await init();
         // FIX: You must await the async constructor
-        const instance = await new WorkerDb(payload.dbName as string);
-
+        const instance = await WorkerDb.create(payload.dbName as string);
         // Listen to Rust and broadcast events
         instance.subscribe((eventStr: string) => {
           try {
