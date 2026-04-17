@@ -21,6 +21,6 @@
     "@moltendb-web/core": "^1.4.2"
   },
   "dependencies": {
-    "@moltendb-web/query": "^1.4.2c"
+    "@moltendb-web/query": "^1.4.2"
   }
 }
