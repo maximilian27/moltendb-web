@@ -333,10 +333,10 @@ describe('onEvent hook', () => {
 
 describe('Follower request timeout', () => {
   it('follower query times out if leader becomes unresponsive', async () => {
+    vi.useFakeTimers();
+
     const leader = await makeLeader('mt-timeout');
     const follower = await makeFollower('mt-timeout');
-
-    vi.useFakeTimers();
 
     // Simulate leader crashing silently by removing its Worker
     // so it never responds to the BC query
@@ -349,10 +349,11 @@ describe('Follower request timeout', () => {
     const getPromise = follower.get('col', 'k1');
 
     // Fast-forward time past the 10-second threshold
-    vi.advanceTimersByTime(10500);
+    const advancePromise = vi.advanceTimersByTimeAsync(10500);
 
     // The promise should explicitly reject with the timeout error
     await expect(getPromise).rejects.toThrow(/timed out/);
+    await advancePromise;
   });
 });
 

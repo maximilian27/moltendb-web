@@ -23,7 +23,7 @@ MoltenDb is a JSON document database written in Rust that runs directly in your 
 
 Beyond being a full-featured embedded database, MoltenDb can also serve as a **persistent state manager** for your application. Because all data is written to OPFS, your app's state survives page reloads, browser crashes, and unexpected connection loss — your users will never lose their work.
 
-> **🚀 Release Candidate** — The core engine, multi-tab sync, and storage layer are feature-complete and stabilised for v1. Server sync, encryption and analytics are planned for a future release.
+> **🚀 Release Candidate 2** — The core engine, multi-tab sync, storage layer, and **transparent at-rest encryption** are feature-complete and stabilised. Server sync and analytics are planned for a future release.
 
 ### 🎮 Explore the Full Functionality
 
@@ -34,7 +34,8 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 **⚠️ Note for Online IDEs:** If you are viewing this on StackBlitz or CodeSandbox, the WASM engine may be blocked by iframe security restrictions. Please click the "Open in New Window/Tab" button in the preview pane to enable the full OPFS storage engine.
 
 ### Core Features
-- **Pure Rust Engine:** The same query logic used in our server binary, compiled to WebAssembly.
+- **Hybrid Bitcask Storage:** The same query logic used in our server binary, compiled to WebAssembly. Data is paged between RAM and OPFS to handle datasets larger than memory.
+- **At-Rest Encryption:** Transparently secure your data in the browser using XChaCha20-Poly1305 (Argon2id key derivation).
 - **OPFS Persistence:** Data persists across page reloads in a dedicated, high-speed sandbox.
 - **Worker-Threaded:** The database runs entirely inside a Web Worker—zero impact on your UI thread.
 - **Multi-Tab Sync (stabilised):** Leader election via the Web Locks API ensures only one tab owns the OPFS handle. All other tabs proxy reads and writes through a `BroadcastChannel`. Seamless leader promotion when the active tab closes.
@@ -93,7 +94,11 @@ TypeScript
 import { MoltenDb } from '@moltendb-web/core';
 import { MoltenDbClient, WorkerTransport } from '@moltendb-web/query';
 
-const db = new MoltenDb('moltendb_demo');
+const db = new MoltenDb('moltendb_demo', {
+  hotThreshold: 25000,          // Keep 25k docs in RAM per collection
+  encryptionKey: 'my-secret',    // Enable transparent at-rest encryption
+  writeMode: 'sync'             // Ensure every write is flushed to OPFS
+});
 await db.init();
 
 // Connect the query builder to the WASM worker
@@ -246,6 +251,32 @@ await client.collection('laptops')
 | Use when | Data rarely changes, fast reads matter | Data changes frequently, freshness matters |
 
 ---
+## Configuration
+
+You can customise the database behavior by passing an options object to the `MoltenDb` constructor.
+
+```ts
+const db = new MoltenDb('my-app', {
+  hotThreshold: 25000,           // Page to disk after 25k docs
+  encryptionKey: 'user-secret',  // Secure at-rest storage in OPFS
+  writeMode: 'sync'              // Ensure durability on every write
+});
+await db.init();
+```
+
+### Options Reference
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `hotThreshold` | `number` | `50000` | **Hybrid Bitcask Limit:** Maximum documents per collection to keep in RAM. When exceeded, the oldest documents are paged out to OPFS to save memory. |
+| `encryptionKey` | `string` | `undefined` | **At-Rest Encryption:** If provided, all data written to OPFS is encrypted using XChaCha20-Poly1305. If omitted, data is stored as plain JSON. |
+| `writeMode` | `'async' \| 'sync'` | `'async'` | **Durability vs Speed:** `'async'` is blazing fast (high throughput), while `'sync'` ensures every write is flushed to disk before returning (safer but slower). **Note:** `async` is recommended for most web apps to avoid blocking during heavy write bursts. |
+| `workerUrl` | `string \| URL` | `undefined` | Custom path to the Web Worker script. |
+| `maxBodySize` | `number` | `10485760` | **Payload Limit:** Max body size in bytes. Prevents memory spikes from large messages. |
+| `rateLimitRequests`| `number` | `100` | (Server Parity/Safety) Max requests allowed per rate-limit window. |
+| `rateLimitWindow` | `number` | `60` | (Server Parity/Safety) Size of the rate-limit window in seconds. |
+
+---
 ## Storage Architecture
 
 ### How the Log Works
@@ -369,8 +400,10 @@ This monorepo contains the following packages:
 - [ ] **React Adapter:** Official `@moltendb-web/react` package with `useQuery` hooks and real-time context providers.
 - [x] **Angular Adapter:** Official `@moltendb-web/angular` package featuring Signal-based data fetching.
 - [ ] **Delta Sync:** Automatic two-way sync with the MoltenDb Rust server.
-- [ ] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Web Crypto API).
+- [x] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Argon2id + XChaCha20) — **stabilised in RC2**.
+- [x] **Hybrid Bitcask:** Seamlessly handle datasets larger than RAM by paging docs to OPFS — **stabilised in RC2**.
 - [ ] **Analytics Functionality:** Run complex analytics queries straight in the browser without blocking the UI.
+- [x] **Configurable Limits:** User-defined RAM thresholds and request body sizes for edge and browser environments — **stabilised in RC2**.
 
 
 ## Contributing & Feedback
