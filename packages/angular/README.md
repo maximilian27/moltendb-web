@@ -74,7 +74,17 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideMoltenDb({
       name: 'local_test_db',
-      workerUrl: '/moltendb-worker.js' // Points to the asset we exposed in Step 1
+      workerUrl: '/moltendb-worker.js',
+      
+      // 🚀 New Hybrid Bitcask & Security Properties
+      hotThreshold: 25000,          // Keep up to 25k docs in RAM per collection
+      encryptionKey: 'user-secret', // Enable at-rest encryption in OPFS
+      writeMode: 'sync',            // Use 'sync' for maximum durability
+
+      // 🛡️ Server Parity & Safety Flags
+      maxBodySize: 10485760,        // 10MB limit
+      rateLimitRequests: 100,
+      rateLimitWindow: 60
     })
   ]
 };
@@ -185,10 +195,16 @@ export class AdminComponent {
 
 Registers MoltenDb as an Angular environment provider. Call this once in your root `app.config.ts`.
 
-| Option | Type | Description |
-|---|---|---|
-| `name` | `string` | The name of the database |
-| `workerUrl` | `string` | URL to the `moltendb-worker.js` asset |
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | `string` | **Required** | The name of your database file in OPFS. |
+| `workerUrl` | `string \| URL` | `undefined` | Custom path to the `moltendb-worker.js` script. |
+| `hotThreshold` | `number` | `50000` | **Hybrid Bitcask Limit:** Maximum documents per collection to keep in RAM. When exceeded, the oldest documents are paged out to OPFS. |
+| `encryptionKey`| `string` | `undefined` | **At-Rest Encryption:** If provided, all data in OPFS is encrypted using XChaCha20-Poly1305. |
+| `writeMode` | `'async' \| 'sync'` | `'async'` | **Durability vs Speed:** `'async'` is blazing fast (high throughput), while `'sync'` ensures every write is flushed to disk before returning (safer but slower). **Note:** `async` is recommended for most web apps to avoid blocking during heavy write bursts. |
+| `maxBodySize` | `number` | `10485760` | **Payload Limit:** Max body size in bytes. |
+| `rateLimitRequests`| `number` | `100` | (Server Parity) Max requests allowed per rate-limit window. |
+| `rateLimitWindow` | `number` | `60` | (Server Parity) Size of the rate-limit window in seconds. |
 
 ### `moltenDbResource<T>(collection, queryFn)`
 

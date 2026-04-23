@@ -3,6 +3,24 @@ import {mapToObj} from "./helpers";
 export interface MoltenDbOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
+
+  /** Maximum documents per collection to keep in RAM. Default: 50,000. */
+  hotThreshold?: number;
+
+  /** Password for at-rest encryption. If not provided, data is stored as plain JSON. */
+  encryptionKey?: string;
+
+  /** Storage write mode: 'async' (default, high throughput) or 'sync' (durable). */
+  writeMode?: 'async' | 'sync';
+
+  /** (Server only) Max requests per IP per rate-limit window. */
+  rateLimitRequests?: number;
+
+  /** (Server only) Rate-limit window size in seconds. */
+  rateLimitWindow?: number;
+
+  /** (Server only) Maximum request body size in bytes. */
+  maxBodySize?: number;
 }
 
 export interface DbEvent {
@@ -16,6 +34,7 @@ export interface DbEvent {
 export class MoltenDb {
   readonly dbName: string;
   readonly workerUrl?: string | URL;
+  readonly options: MoltenDbOptions;
   worker: Worker | null = null;
   private initPromise: Promise<void> | null = null;
 
@@ -34,6 +53,7 @@ export class MoltenDb {
   constructor(dbName = 'moltendb', options: MoltenDbOptions = {}) {
     this.dbName = dbName;
     this.workerUrl = options.workerUrl;
+    this.options = options;
   }
 
   /**
@@ -130,7 +150,15 @@ export class MoltenDb {
     };
 
     // Wait for worker to boot
-    await this.sendMessage('init', { dbName: this.dbName });
+    await this.sendMessage('init', {
+      dbName: this.dbName,
+      hotThreshold: this.options.hotThreshold,
+      encryptionKey: this.options.encryptionKey,
+      writeMode: this.options.writeMode,
+      rateLimitRequests: this.options.rateLimitRequests,
+      rateLimitWindow: this.options.rateLimitWindow,
+      maxBodySize: this.options.maxBodySize,
+    });
 
     this.bc.onmessage = async (e) => {
       const msg = e.data;

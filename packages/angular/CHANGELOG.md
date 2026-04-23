@@ -1,5 +1,17 @@
 # @moltendb-web/angular
 
+## 1.5.0
+
+### Minor Changes
+
+- c087ed6: `@moltendb-web/core` to expose `hotThreshold`, `encryptionKey`, `writeMode`, `rateLimitRequests`, `rateLimitWindow`, and `maxBodySize` options
+
+### Patch Changes
+
+- Updated dependencies [c087ed6]
+  - @moltendb-web/core@1.5.0
+  - @moltendb-web/query@1.5.0
+
 ## 1.4.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @moltendb-web/query
 
+## 1.5.0
+
+### Minor Changes
+
+- c087ed6: `@moltendb-web/core` to expose `hotThreshold`, `encryptionKey`, `writeMode`, `rateLimitRequests`, `rateLimitWindow`, and `maxBodySize` options
+
 ## 1.4.2
 
 ### Patch Changes
