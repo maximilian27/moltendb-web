@@ -1,5 +1,14 @@
 # @moltendb-web/angular
 
+## 1.5.1
+
+### Patch Changes
+
+- 5866389: sync core engine
+- Updated dependencies [5866389]
+  - @moltendb-web/core@1.5.1
+  - @moltendb-web/query@1.5.1
+
 ## 1.5.0
 
 ### Minor Changes
