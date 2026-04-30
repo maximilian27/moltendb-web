@@ -1,5 +1,11 @@
 # @moltendb-web/query
 
+## 1.5.1
+
+### Patch Changes
+
+- 5866389: sync core engine
+
 ## 1.5.0
 
 ### Minor Changes
