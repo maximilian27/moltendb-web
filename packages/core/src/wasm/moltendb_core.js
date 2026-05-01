@@ -94,6 +94,7 @@ export class WorkerDb {
      * * `rate_limit_requests` — Optional max requests per window (default: 100).
      * * `rate_limit_window` — Optional window size in seconds (default: 60).
      * * `max_body_size` — Optional maximum request body size in bytes (default: 10MB).
+     * * `max_keys_per_request` — Optional maximum keys allowed per request (default: 1000).
      * @param {string} db_name
      * @param {number | null} [hot_threshold]
      * @param {string | null} [encryption_key]
@@ -101,16 +102,17 @@ export class WorkerDb {
      * @param {number | null} [rate_limit_requests]
      * @param {bigint | null} [rate_limit_window]
      * @param {number | null} [max_body_size]
+     * @param {number | null} [max_keys_per_request]
      * @returns {Promise<WorkerDb>}
      */
-    static create(db_name, hot_threshold, encryption_key, write_mode, rate_limit_requests, rate_limit_window, max_body_size) {
+    static create(db_name, hot_threshold, encryption_key, write_mode, rate_limit_requests, rate_limit_window, max_body_size, max_keys_per_request) {
         const ptr0 = passStringToWasm0(db_name, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
         var ptr1 = isLikeNone(encryption_key) ? 0 : passStringToWasm0(encryption_key, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         var len1 = WASM_VECTOR_LEN;
         var ptr2 = isLikeNone(write_mode) ? 0 : passStringToWasm0(write_mode, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         var len2 = WASM_VECTOR_LEN;
-        const ret = wasm.workerdb_create(ptr0, len0, isLikeNone(hot_threshold) ? 0x100000001 : (hot_threshold) >>> 0, ptr1, len1, ptr2, len2, isLikeNone(rate_limit_requests) ? 0x100000001 : (rate_limit_requests) >>> 0, !isLikeNone(rate_limit_window), isLikeNone(rate_limit_window) ? BigInt(0) : rate_limit_window, isLikeNone(max_body_size) ? 0x100000001 : (max_body_size) >>> 0);
+        const ret = wasm.workerdb_create(ptr0, len0, isLikeNone(hot_threshold) ? 0x100000001 : (hot_threshold) >>> 0, ptr1, len1, ptr2, len2, isLikeNone(rate_limit_requests) ? 0x100000001 : (rate_limit_requests) >>> 0, !isLikeNone(rate_limit_window), isLikeNone(rate_limit_window) ? BigInt(0) : rate_limit_window, isLikeNone(max_body_size) ? 0x100000001 : (max_body_size) >>> 0, isLikeNone(max_keys_per_request) ? 0x100000001 : (max_keys_per_request) >>> 0);
         return takeObject(ret);
     }
     /**

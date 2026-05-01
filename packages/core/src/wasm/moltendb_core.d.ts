@@ -62,8 +62,9 @@ export class WorkerDb {
      * * `rate_limit_requests` — Optional max requests per window (default: 100).
      * * `rate_limit_window` — Optional window size in seconds (default: 60).
      * * `max_body_size` — Optional maximum request body size in bytes (default: 10MB).
+     * * `max_keys_per_request` — Optional maximum keys allowed per request (default: 1000).
      */
-    static create(db_name: string, hot_threshold?: number | null, encryption_key?: string | null, write_mode?: string | null, rate_limit_requests?: number | null, rate_limit_window?: bigint | null, max_body_size?: number | null): Promise<WorkerDb>;
+    static create(db_name: string, hot_threshold?: number | null, encryption_key?: string | null, write_mode?: string | null, rate_limit_requests?: number | null, rate_limit_window?: bigint | null, max_body_size?: number | null, max_keys_per_request?: number | null): Promise<WorkerDb>;
     /**
      * Route an incoming message from the JavaScript worker to the correct handler.
      *
@@ -98,7 +99,7 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_workerdb_free: (a: number, b: number) => void;
     readonly workerdb_analytics: (a: number, b: number, c: number, d: number) => void;
-    readonly workerdb_create: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: bigint, k: number) => number;
+    readonly workerdb_create: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: bigint, k: number, l: number) => number;
     readonly workerdb_handle_message: (a: number, b: number, c: number) => void;
     readonly workerdb_subscribe: (a: number, b: number) => void;
     readonly __wasm_bindgen_func_elem_4204: (a: number, b: number, c: number, d: number) => void;
