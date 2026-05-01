@@ -19,8 +19,14 @@ export interface MoltenDbOptions {
   /** (Server only) Rate-limit window size in seconds. */
   rateLimitWindow?: number;
 
-  /** (Server only) Maximum request body size in bytes. */
+  /**  Maximum request body size in bytes. */
   maxBodySize?: number;
+
+  /** Maximum keys allowed per request. Default: 1000. */
+  maxKeysPerRequest?: number;
+
+  /** Run entirely in RAM — no OPFS writes. Data is lost on page reload. Default: false. */
+  inMemory?: boolean;
 }
 
 export interface DbEvent {
