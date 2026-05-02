@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/react",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Official React hooks wrapper for MoltenDb",
   "type": "module",
   "author": "Maximilian Both <maximilian.both27@outlook.com>",
@@ -31,8 +31,8 @@
     "react": ">=16.8.0"
   },
   "dependencies": {
-    "@moltendb-web/core": "^1.6.0",
-    "@moltendb-web/query": "^1.6.0"
+    "@moltendb-web/core": "^1.7.0",
+    "@moltendb-web/query": "^1.7.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
