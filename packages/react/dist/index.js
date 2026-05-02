@@ -1,63 +1,73 @@
 import { jsx as h } from "react/jsx-runtime";
-import { createContext as p, useState as a, useRef as b, useEffect as M, useContext as w } from "react";
+import { createContext as p, useState as a, useRef as d, useEffect as D, useContext as w } from "react";
 import { MoltenDb as E } from "@moltendb-web/core";
 import { MoltenDbClient as P } from "@moltendb-web/query";
-const x = p(null);
-function z({ config: e, children: r }) {
-  const [o, n] = a(!1), t = b(null), s = b(null);
-  return t.current || (t.current = new E(e.name, e), s.current = new P(t.current)), M(() => {
-    t.current.init().then(() => n(!0)).catch((u) => console.error("[MoltenDb] Failed to initialize", u));
+const y = p(null);
+function z({ config: e, children: n }) {
+  const [r, o] = a(!1), t = d(null), s = d(null);
+  return t.current || (t.current = new E(e.name, e), s.current = new P(t.current)), D(() => {
+    t.current.init().then(() => o(!0)).catch((u) => console.error("[MoltenDb] Failed to initialize", u));
   }, []), /* @__PURE__ */ h(
-    x.Provider,
+    y.Provider,
     {
       value: {
         db: t.current,
         client: s.current,
-        isReady: o
+        isReady: r
       },
-      children: r
+      children: n
     }
   );
 }
-function R() {
-  const e = w(x);
+function f() {
+  const e = w(y);
   if (!e)
     throw new Error("[MoltenDb] useMoltenDbContext must be used inside <MoltenDbProvider>");
   return e;
 }
 function F() {
-  return R().client;
+  return f().client;
 }
-function S(e, r) {
-  const { db: o, client: n, isReady: t } = R(), [s, u] = a(void 0), [v, d] = a(!1), [y, f] = a(null), D = b(r);
-  return D.current = r, M(() => {
+function S() {
+  return f().isReady;
+}
+function V(e) {
+  const { db: n, isReady: r } = f();
+  D(() => {
+    if (r)
+      return n.subscribe(e);
+  }, [n, r, e]);
+}
+function k(e, n) {
+  const { db: r, client: o, isReady: t } = f(), [s, u] = a(void 0), [x, M] = a(!1), [v, b] = a(null), m = d(n);
+  return m.current = n, D(() => {
     if (!t) return;
-    let l = !1;
-    const m = async () => {
-      var c;
-      d(!0);
+    let c = !1;
+    const R = async () => {
+      var i;
+      M(!0);
       try {
-        const i = await D.current(n.collection(e), n);
-        l || (u(i), f(null));
-      } catch (i) {
-        l || ((c = i.message) != null && c.includes("404") ? (u([]), f(null)) : f(i));
+        const l = await m.current(o.collection(e), o);
+        c || (u(l), b(null));
+      } catch (l) {
+        c || ((i = l.message) != null && i.includes("404") ? (u([]), b(null)) : b(l));
       } finally {
-        l || d(!1);
+        c || M(!1);
       }
     };
-    m();
-    const C = o.subscribe((c) => {
-      c.collection === e && m();
+    R();
+    const C = r.subscribe((i) => {
+      i.collection === e && R();
     });
     return () => {
-      l = !0, C();
+      c = !0, C();
     };
-  }, [t, e, o, n]), { value: s, isLoading: v, error: y };
+  }, [t, e, r, o]), { value: s, isLoading: x, error: v };
 }
 export {
-  x as MoltenDbContext,
   z as MoltenDbProvider,
   F as useMoltenDb,
-  R as useMoltenDbContext,
-  S as useMoltenDbResource
+  V as useMoltenDbEvents,
+  S as useMoltenDbReady,
+  k as useMoltenDbResource
 };

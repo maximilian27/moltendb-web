@@ -15,7 +15,8 @@
     "build:query": "npm run build --workspace=@moltendb-web/query",
     "build:angular": "npm run build --workspace=@moltendb-web/angular",
     "build:react": "npm run build --workspace=@moltendb-web/react",
-    "build:all": "npm run build:core && npm run build:query && npm run build:angular && npm run build:react"
+    "build:all": "npm run build:core && npm run build:query && npm run build:angular && npm run build:react",
+    "sample": "npm run dev --prefix sample-app"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
