@@ -11,3 +11,5 @@
 /packages/core/dist/
 
 /packages/query/node_modules/
+/packages/react/dist/
+/packages/react/node_modules/
