@@ -81,10 +81,10 @@ export const appConfig: ApplicationConfig = {
       encryptionKey: 'user-secret', // Enable at-rest encryption in OPFS
       writeMode: 'sync',            // Use 'sync' for maximum durability
 
-      // 🛡️ Server Parity & Safety Flags
+      // 🛡️ Safety & Limits
       maxBodySize: 10485760,        // 10MB limit
-      rateLimitRequests: 100,
-      rateLimitWindow: 60
+      maxKeysPerRequest: 1000,      // Maximum number of keys allowed per JSON request.
+      inMemory: false,              // Set to true for ephemeral/CI mode (no OPFS writes)
     })
   ]
 };
@@ -203,6 +203,8 @@ Registers MoltenDb as an Angular environment provider. Call this once in your ro
 | `encryptionKey`| `string` | `undefined` | **At-Rest Encryption:** If provided, all data in OPFS is encrypted using XChaCha20-Poly1305. |
 | `writeMode` | `'async' \| 'sync'` | `'async'` | **Durability vs Speed:** `'async'` is blazing fast (high throughput), while `'sync'` ensures every write is flushed to disk before returning (safer but slower). **Note:** `async` is recommended for most web apps to avoid blocking during heavy write bursts. |
 | `maxBodySize` | `number` | `10485760` | **Payload Limit:** Max body size in bytes. |
+| `maxKeysPerRequest` | `number` | `1000` | **Batch Limit:** Maximum number of keys allowed in a single request (e.g. a batch delete or fetch). |
+| `inMemory` | `boolean` | `false` | **Ephemeral Mode:** Run entirely in RAM — no OPFS writes, no WAL. All data is lost when the worker is terminated. Ideal for CI environments and ephemeral caches. |
 | `rateLimitRequests`| `number` | `100` | (Server Parity) Max requests allowed per rate-limit window. |
 | `rateLimitWindow` | `number` | `60` | (Server Parity) Size of the rate-limit window in seconds. |
 

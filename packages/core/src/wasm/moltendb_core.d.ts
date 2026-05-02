@@ -82,6 +82,7 @@ export class WorkerDb {
      *   - "delete"   → delete documents or drop:   { collection, keys: ... } or { drop: true }
      *   - "compact"  → compact the OPFS log file
      *   - "get_size" → return current OPFS file size in bytes
+     *   - "clear"    → wipe all in-memory state (in-memory mode only)
      *
      * Returns a JsValue result on success, or a JsValue error string on failure.
      */
@@ -103,8 +104,8 @@ export interface InitOutput {
     readonly workerdb_create: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
     readonly workerdb_handle_message: (a: number, b: number, c: number) => void;
     readonly workerdb_subscribe: (a: number, b: number) => void;
-    readonly __wasm_bindgen_func_elem_4211: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_4221: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_4220: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_4230: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

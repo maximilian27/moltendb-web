@@ -11,7 +11,7 @@
   [![NPM Version](https://img.shields.io/npm/v/@moltendb-web/core?style=flat-square&color=orange)](https://www.npmjs.com/package/@moltendb-web/core)
   [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE.md)
   [![WASM](https://img.shields.io/badge/wasm-optimized-magenta?style=flat-square)](https://webassembly.org/)
-  [![Status](https://img.shields.io/badge/status-release%20candidate-brightgreen?style=flat-square)]()
+  [![Status](https://img.shields.io/badge/status-stable-brightgreen?style=flat-square)]()
 
 </div>
 
@@ -23,7 +23,7 @@ MoltenDb is a JSON document database written in Rust that runs directly in your 
 
 Beyond being a full-featured embedded database, MoltenDb can also serve as a **persistent state manager** for your application. Because all data is written to OPFS, your app's state survives page reloads, browser crashes, and unexpected connection loss — your users will never lose their work.
 
-> **🚀 Release Candidate 2** — The core engine, multi-tab sync, storage layer, and **transparent at-rest encryption** are feature-complete and stabilised. Server sync and analytics are planned for a future release.
+> **✅ Stable** — The core engine, multi-tab sync, storage layer, and **transparent at-rest encryption** are feature-complete and stabilised. Server sync and analytics are planned for a future release.
 
 ### 🎮 Explore the Full Functionality
 
@@ -220,6 +220,8 @@ MoltenDb supports a variety of operators in the `where` clause:
 | `$contains` | `$ct` | Substring check (string) or membership check (array) |
 | `$in` | `$oneOf` | Field value is one of a list |
 | `$nin` | `$notIn` | Field value is not in a list |
+| `$or` | | At least one of the sub-conditions must match (array of where-style objects) |
+| `$and` | | All sub-conditions must match (array of where-style objects) |
 
 // Inline reference embedding (`extends`)
 
@@ -266,15 +268,15 @@ await db.init();
 
 ### Options Reference
 
-| Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `hotThreshold` | `number` | `50000` | **Hybrid Bitcask Limit:** Maximum documents per collection to keep in RAM. When exceeded, the oldest documents are paged out to OPFS to save memory. |
-| `encryptionKey` | `string` | `undefined` | **At-Rest Encryption:** If provided, all data written to OPFS is encrypted using XChaCha20-Poly1305. If omitted, data is stored as plain JSON. |
+| Property | Type | Default | Description                                                                                                                                                                                                                                                      |
+| :--- | :--- | :--- |:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `hotThreshold` | `number` | `50000` | **Hybrid Bitcask Limit:** Maximum documents per collection to keep in RAM. When exceeded, the oldest documents are paged out to OPFS to save memory.                                                                                                             |
+| `encryptionKey` | `string` | `undefined` | **At-Rest Encryption:** If provided, all data written to OPFS is encrypted using XChaCha20-Poly1305. If omitted, data is stored as plain JSON.                                                                                                                   |
 | `writeMode` | `'async' \| 'sync'` | `'async'` | **Durability vs Speed:** `'async'` is blazing fast (high throughput), while `'sync'` ensures every write is flushed to disk before returning (safer but slower). **Note:** `async` is recommended for most web apps to avoid blocking during heavy write bursts. |
-| `workerUrl` | `string \| URL` | `undefined` | Custom path to the Web Worker script. |
-| `maxBodySize` | `number` | `10485760` | **Payload Limit:** Max body size in bytes. Prevents memory spikes from large messages. |
-| `rateLimitRequests`| `number` | `100` | (Server Parity/Safety) Max requests allowed per rate-limit window. |
-| `rateLimitWindow` | `number` | `60` | (Server Parity/Safety) Size of the rate-limit window in seconds. |
+| `workerUrl` | `string \| URL` | `undefined` | Custom path to the Web Worker script.                                                                                                                                                                                                                            |
+| `maxBodySize` | `number` | `10485760` | **Payload Limit:** Max body size in bytes. Prevents memory spikes from large messages.                                                                                                                                                                           |
+| `maxKeysPerRequest` | `number` | `1000` | **Batch Limit:** Maximum number of keys allowed per JSON request.                                                                                                                                                                                                |
+| `inMemory` | `boolean` | `false` | **Ephemeral Mode:** Run entirely in RAM — no OPFS writes, no WAL. All data is lost when **any** tab refreshes or closes. Ideal for CI environments and ephemeral caches.                                                                                         |
 
 ---
 ## Storage Architecture
@@ -394,16 +396,16 @@ This monorepo contains the following packages:
 
 ## Roadmap
 
-- [x] **Multi-Tab Sync:** Leader election for multiple tabs to share a single OPFS instance — **stabilised in RC1**.
-- [x] **Automatic Compaction:** Log compacts automatically at 500 entries or 5 MB — **stabilised in RC1**.
-- [x] **Rich Test Suite:** 50 unit, integration, and stress tests via Vitest — **stabilised in RC1**.
+- [x] **Multi-Tab Sync:** Leader election for multiple tabs to share a single OPFS instance.
+- [x] **Automatic Compaction:** Log compacts automatically at 500 entries or 5 MB.
+- [x] **Rich Test Suite:** 50 unit, integration, and stress tests via Vitest.
 - [ ] **React Adapter:** Official `@moltendb-web/react` package with `useQuery` hooks and real-time context providers.
 - [x] **Angular Adapter:** Official `@moltendb-web/angular` package featuring Signal-based data fetching.
 - [ ] **Delta Sync:** Automatic two-way sync with the MoltenDb Rust server.
-- [x] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Argon2id + XChaCha20) — **stabilised in RC2**.
-- [x] **Hybrid Bitcask:** Seamlessly handle datasets larger than RAM by paging docs to OPFS — **stabilised in RC2**.
+- [x] **Data Encryption:** Transparent encryption-at-rest using hardware-backed keys (Argon2id + XChaCha20).
+- [x] **Hybrid Bitcask:** Seamlessly handle datasets larger than RAM by paging docs to OPFS.
 - [ ] **Analytics Functionality:** Run complex analytics queries straight in the browser without blocking the UI.
-- [x] **Configurable Limits:** User-defined RAM thresholds and request body sizes for edge and browser environments — **stabilised in RC2**.
+- [x] **Configurable Limits:** User-defined RAM thresholds and request body sizes for edge and browser environments.
 
 
 ## Contributing & Feedback

@@ -13,19 +13,21 @@ export interface MoltenDbOptions {
   /** Storage write mode: 'async' (default, high throughput) or 'sync' (durable). */
   writeMode?: 'async' | 'sync';
 
-  /** (Server only) Max requests per IP per rate-limit window. */
-  rateLimitRequests?: number;
-
-  /** (Server only) Rate-limit window size in seconds. */
-  rateLimitWindow?: number;
-
   /**  Maximum request body size in bytes. */
   maxBodySize?: number;
 
-  /** Maximum keys allowed per request. Default: 1000. */
+  /** Maximum number of keys allowed per JSON request. Default: 1000. */
   maxKeysPerRequest?: number;
 
-  /** Run entirely in RAM — no OPFS writes. Data is lost on page reload. Default: false. */
+  /**
+   * Run entirely in RAM — no OPFS writes.
+   *
+   * All tabs share a single in-memory store via the leader/follower election.
+   * Data persists as long as at least one tab is open.
+   * When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs.
+   *
+   * Default: false.
+   */
   inMemory?: boolean;
 }
 
@@ -92,7 +94,15 @@ export class MoltenDb {
     // 1. If initialization has already started or finished, return the existing promise
     if (this.initPromise) return this.initPromise;
 
-    // 2. Otherwise, start the initialization and store the promise
+    // 2. When running in-memory, any tab refresh should wipe the shared RAM store.
+    //    Broadcast a clear_all signal on beforeunload so the leader can wipe the Rust DashMap.
+    if (this.options.inMemory) {
+      window.addEventListener('beforeunload', () => {
+        try { this.bc?.postMessage({ type: 'clear_all' }); } catch {}
+      });
+    }
+
+    // 3. Otherwise, start the initialization and store the promise
     this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
       this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
 
@@ -124,13 +134,15 @@ export class MoltenDb {
 
   private async startAsLeader() {
     // Guard: OPFS is required
-    try {
-      await navigator.storage.getDirectory();
-    } catch {
-      throw new Error(
-          '[MoltenDb] Origin Private File System (OPFS) is not available in this browser context. ' +
-          'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
-      );
+    if (!this.options.inMemory) {
+      try {
+        await navigator.storage.getDirectory();
+      } catch {
+        throw new Error(
+            '[MoltenDb] Origin Private File System (OPFS) is not available in this browser context. ' +
+            'Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+).'
+        );
+      }
     }
 
     this.isLeader = true;
@@ -158,16 +170,28 @@ export class MoltenDb {
     // Wait for worker to boot
     await this.sendMessage('init', {
       dbName: this.dbName,
-      hotThreshold: this.options.hotThreshold,
       encryptionKey: this.options.encryptionKey,
-      writeMode: this.options.writeMode,
-      rateLimitRequests: this.options.rateLimitRequests,
-      rateLimitWindow: this.options.rateLimitWindow,
+      hotThreshold: this.options.hotThreshold,
+      inMemory: this.options.inMemory,
       maxBodySize: this.options.maxBodySize,
+      maxKeysPerRequest: this.options.maxKeysPerRequest,
+      writeMode: this.options.writeMode,
     });
 
     this.bc.onmessage = async (e) => {
       const msg = e.data;
+      // Any tab unloading in in-memory mode broadcasts this — wipe the shared RAM store.
+      if (msg.type === 'clear_all') {
+        try {
+          await this.sendMessage('clear', {});
+          this.bc.postMessage({ type: 'cleared' });
+          console.log('[MoltenDb] In-memory store wiped (tab unloaded).');
+        } catch (err) {
+          console.warn('[MoltenDb] Failed to clear in-memory store:', err);
+        }
+        return;
+      }
+
       if (msg.type === 'query' && msg.action) {
         try {
           const result = await this.sendMessage(msg.action, msg.payload);
@@ -190,6 +214,15 @@ export class MoltenDb {
       const data = e.data;
       if (data.type === 'event') {
         this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
+        return;
+      }
+      // In-memory wipe notification from leader — reject all in-flight requests.
+      if (data.type === 'cleared') {
+        console.log('[MoltenDb] In-memory store was wiped by another tab.');
+        for (const [id, req] of this.pendingRequests) {
+          req.reject(new Error('[MoltenDb] In-memory store was cleared by a tab reload.'));
+          this.pendingRequests.delete(id);
+        }
         return;
       }
       if (data.type === 'response') {
