@@ -27,12 +27,13 @@ jobs:
           npm run build --workspace=@moltendb-web/core
           npm run build --workspace=@moltendb-web/query
           npm run build --workspace=@moltendb-web/angular
+          npm run build --workspace=@moltendb-web/react
 
       - name: Publish Packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          PACKAGES=("core" "query" "angular")
+          PACKAGES=("core" "query" "angular" "react")
           
           for PKG in "${PACKAGES[@]}"; do
             echo "====================================="
