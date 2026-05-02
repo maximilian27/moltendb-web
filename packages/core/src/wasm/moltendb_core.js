@@ -91,26 +91,28 @@ export class WorkerDb {
      * * `hot_threshold` — Optional maximum documents per collection to keep in RAM (default: 50,000).
      * * `encryption_key` — Optional password for at-rest encryption.
      * * `write_mode` — Optional write mode: "async" (default) or "sync".
-     * * `rate_limit_requests` — Optional max requests per window (default: 100).
-     * * `rate_limit_window` — Optional window size in seconds (default: 60).
      * * `max_body_size` — Optional maximum request body size in bytes (default: 10MB).
+     * * `max_keys_per_request` — Optional maximum keys allowed per request (default: 1000).
+     * * `in_memory` — Optional flag to run entirely in RAM with no OPFS writes (default: false).
+     *   When `true`, all data is lost when the worker is terminated — useful for ephemeral
+     *   session caches or testing without touching OPFS storage.
      * @param {string} db_name
      * @param {number | null} [hot_threshold]
      * @param {string | null} [encryption_key]
      * @param {string | null} [write_mode]
-     * @param {number | null} [rate_limit_requests]
-     * @param {bigint | null} [rate_limit_window]
      * @param {number | null} [max_body_size]
+     * @param {number | null} [max_keys_per_request]
+     * @param {boolean | null} [in_memory]
      * @returns {Promise<WorkerDb>}
      */
-    static create(db_name, hot_threshold, encryption_key, write_mode, rate_limit_requests, rate_limit_window, max_body_size) {
+    static create(db_name, hot_threshold, encryption_key, write_mode, max_body_size, max_keys_per_request, in_memory) {
         const ptr0 = passStringToWasm0(db_name, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
         var ptr1 = isLikeNone(encryption_key) ? 0 : passStringToWasm0(encryption_key, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         var len1 = WASM_VECTOR_LEN;
         var ptr2 = isLikeNone(write_mode) ? 0 : passStringToWasm0(write_mode, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         var len2 = WASM_VECTOR_LEN;
-        const ret = wasm.workerdb_create(ptr0, len0, isLikeNone(hot_threshold) ? 0x100000001 : (hot_threshold) >>> 0, ptr1, len1, ptr2, len2, isLikeNone(rate_limit_requests) ? 0x100000001 : (rate_limit_requests) >>> 0, !isLikeNone(rate_limit_window), isLikeNone(rate_limit_window) ? BigInt(0) : rate_limit_window, isLikeNone(max_body_size) ? 0x100000001 : (max_body_size) >>> 0);
+        const ret = wasm.workerdb_create(ptr0, len0, isLikeNone(hot_threshold) ? 0x100000001 : (hot_threshold) >>> 0, ptr1, len1, ptr2, len2, isLikeNone(max_body_size) ? 0x100000001 : (max_body_size) >>> 0, isLikeNone(max_keys_per_request) ? 0x100000001 : (max_keys_per_request) >>> 0, isLikeNone(in_memory) ? 0xFFFFFF : in_memory ? 1 : 0);
         return takeObject(ret);
     }
     /**
@@ -129,6 +131,7 @@ export class WorkerDb {
      *   - "delete"   → delete documents or drop:   { collection, keys: ... } or { drop: true }
      *   - "compact"  → compact the OPFS log file
      *   - "get_size" → return current OPFS file size in bytes
+     *   - "clear"    → wipe all in-memory state (in-memory mode only)
      *
      * Returns a JsValue result on success, or a JsValue error string on failure.
      * @param {any} data
@@ -417,7 +420,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_4216(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_4230(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -564,8 +567,8 @@ function __wbg_get_imports() {
             return ret;
         }, arguments); },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 769, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_4204);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 774, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_4220);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -607,10 +610,10 @@ function __wbg_get_imports() {
     };
 }
 
-function __wasm_bindgen_func_elem_4204(arg0, arg1, arg2) {
+function __wasm_bindgen_func_elem_4220(arg0, arg1, arg2) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.__wasm_bindgen_func_elem_4204(retptr, arg0, arg1, addHeapObject(arg2));
+        wasm.__wasm_bindgen_func_elem_4220(retptr, arg0, arg1, addHeapObject(arg2));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         if (r1) {
@@ -621,8 +624,8 @@ function __wasm_bindgen_func_elem_4204(arg0, arg1, arg2) {
     }
 }
 
-function __wasm_bindgen_func_elem_4216(arg0, arg1, arg2, arg3) {
-    wasm.__wasm_bindgen_func_elem_4216(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+function __wasm_bindgen_func_elem_4230(arg0, arg1, arg2, arg3) {
+    wasm.__wasm_bindgen_func_elem_4230(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 const WorkerDbFinalization = (typeof FinalizationRegistry === 'undefined')

@@ -17,9 +17,9 @@ self.onmessage = async (e: MessageEvent) => {
             payload.hotThreshold as number | undefined,
             payload.encryptionKey as string | undefined,
             payload.writeMode as string | undefined,
-            payload.rateLimitRequests as number | undefined,
-            payload.rateLimitWindow as bigint | undefined | null,
-            payload.maxBodySize as number | undefined
+            payload.maxBodySize as number | undefined,
+            payload.maxKeysPerRequest as number | undefined | null,
+            payload.inMemory as boolean | undefined
         );
         // Listen to Rust and broadcast events
         instance.subscribe((eventStr: string) => {
