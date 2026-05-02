@@ -35,6 +35,8 @@
     "@moltendb-web/query": "^1.6.0"
   },
   "devDependencies": {
+    "@moltendb-web/core": "^1.6.0",
+    "@moltendb-web/query": "^1.6.0",
     "@types/react": "^19.2.14",
     "react": "^19.2.5",
     "typescript": "^5.5.3",

@@ -16,8 +16,10 @@ The package uses only stable React hooks (`useState`, `useEffect`, `useRef`, `us
 ## Installation
 
 ```bash
-npm install @moltendb-web/react @moltendb-web/core @moltendb-web/query
+npm install @moltendb-web/react
 ```
+
+`@moltendb-web/core` and `@moltendb-web/query` are automatically installed as dependencies — no need to install them separately.
 
 ## Setup
 
@@ -182,6 +184,46 @@ function AppShell({ children }: { children: React.ReactNode }) {
 }
 ```
 
+### `useMoltenDbIsLeader()`
+
+Returns `true` if the current tab is the **Leader** — the tab running the WASM worker and performing actual writes. Other tabs act as follower proxies that forward operations to the leader. Must be used inside `<MoltenDbProvider>`.
+
+```tsx
+import { useMoltenDbIsLeader } from '@moltendb-web/react';
+
+function TabBadge() {
+  const isLeader = useMoltenDbIsLeader();
+
+  return (
+    <span className="badge">
+      {isLeader ? '👑 Leader' : '🔗 Follower'}
+    </span>
+  );
+}
+```
+
+### `useMoltenDbTerminate()`
+
+Returns a function that terminates the MoltenDb worker. You must call this before clearing OPFS storage to avoid file-lock conflicts. Must be used inside `<MoltenDbProvider>`.
+
+```tsx
+import { useMoltenDbTerminate } from '@moltendb-web/react';
+
+function ResetButton() {
+  const terminate = useMoltenDbTerminate();
+
+  const handleReset = async () => {
+    if (!confirm('Delete all local data?')) return;
+    terminate();
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('mydb', { recursive: true });
+    location.reload();
+  };
+
+  return <button onClick={handleReset}>🗑 Reset All Data</button>;
+}
+```
+
 ### `useMoltenDbEvents(listener)`
 
 Subscribes to real-time mutation events from the database. The `listener` is called with a `DbEvent` whenever any document is created, updated, deleted, or a collection is dropped. Must be used inside `<MoltenDbProvider>`.
@@ -217,6 +259,8 @@ function LiveFeed() {
 | `MoltenDbProvider` | Component | Context provider — initializes MoltenDb and exposes the client to the subtree |
 | `useMoltenDb()` | Hook | Returns the `MoltenDbClient` instance |
 | `useMoltenDbReady()` | Hook | Returns `true` once MoltenDb has finished initialising |
+| `useMoltenDbIsLeader()` | Hook | Returns `true` if the current tab is the Leader (running the WASM worker) |
+| `useMoltenDbTerminate()` | Hook | Returns a function that terminates the MoltenDb worker — call before clearing OPFS storage |
 | `useMoltenDbResource(collection, queryFn)` | Hook | Reactive data fetching with `value`, `isLoading`, `error` and auto-refresh on mutations |
 | `useMoltenDbEvents(listener)` | Hook | Subscribe to real-time `DbEvent` mutation events |
 | `DbEvent` | Type | Event object emitted on mutations: `{ event, collection, key, new_v }` |

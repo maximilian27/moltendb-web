@@ -46,8 +46,9 @@ The demo app showcases two real-world scenarios:
 
 This monorepo contains the following packages. Please refer to their individual READMEs for detailed documentation, usage examples, and API references.
 
-| Package | Description | README |
-|---------|-------------|--------|
-| [`@moltendb-web/core`](packages/core) | Core WASM engine — low-level database bindings | [README](packages/core/README.md) |
-| [`@moltendb-web/query`](packages/query) | Query builder — ergonomic API on top of core | [README](packages/query/README.md) |
+| Package                                     | Description | README                               |
+|---------------------------------------------|-------------|--------------------------------------|
+| [`@moltendb-web/core`](packages/core)       | Core WASM engine — low-level database bindings | [README](packages/core/README.md)    |
+| [`@moltendb-web/query`](packages/query)     | Query builder — ergonomic API on top of core | [README](packages/query/README.md)   |
 | [`@moltendb-web/angular`](packages/angular) | Angular integration — reactive Signals, resources, and DI | [README](packages/angular/README.md) |
+| [`@moltendb-web/react`](packages/react)     | Angular integration — reactive Signals, resources, and DI | [README](packages/react/README.md)   |
