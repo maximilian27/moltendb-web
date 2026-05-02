@@ -1,12 +1,8 @@
 # @moltendb-web/angular
 
-The official Angular integration for MoltenDb, providing a seamless, highly reactive developer experience using modern Angular Signals.
+Official Angular integration for [MoltenDb](https://github.com/maximilian27/moltendb-web), providing a seamless reactive developer experience using modern Angular Signals.
 
-This package bridges the gap between MoltenDb's powerful Web Worker/WASM engine and your Angular UI, offering auto-updating data resources, built-in loading states, and elegant functional dependency injection.
-
-Beyond querying a database, you can use MoltenDb as a **persistent state manager** for your Angular application. Because all state is written to OPFS, it survives page reloads, browser crashes, and unexpected connection loss — your users will never lose their work.
-
-> **Requirements:** Angular **17 or higher** is required. This library uses Angular Signals and standalone APIs introduced in Angular 17. If this library generates enough interest, a legacy Angular library using RxJS may be created in the future.
+> **Requirements:** Angular **17 or higher**. This library uses Angular Signals and standalone APIs introduced in Angular 17.
 
 ---
 
@@ -16,11 +12,7 @@ See the library in action with a real-world demo application:
 
 - 🔗 **Demo repo:** [github.com/maximilian27/moltendb-angular](https://github.com/maximilian27/moltendb-angular)
 - ⚡ **StackBlitz:** [Open in StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-angular)
-- 🌐 **Live demo:** [moltendb-angular.maximilian-both27.workers.dev/laptops](https://moltendb-angular.maximilian-both27.workers.dev/laptops)
-
-The demo app showcases two real-world scenarios:
-- **`/laptops`** — A fully-featured data table with filtering, sorting, column visibility, field projection, and reactive summary stats using `moltenDbResource`.
-- **`/stress-test`** — A benchmarking page measuring MoltenDB CRUD performance (bulk writes, reads, filtered/sorted queries, updates, and deletes) displayed as ops/sec.
+- 🌠 **Live demo:** [moltendb-angular.maximilian-both27.workers.dev/laptops](https://moltendb-angular.maximilian-both27.workers.dev/laptops)
 
 ---
 
@@ -30,13 +22,15 @@ The demo app showcases two real-world scenarios:
 npm install @moltendb-web/angular
 ```
 
+`@moltendb-web/core` and `@moltendb-web/query` are automatically installed as dependencies — no need to install them separately.
+
 ---
 
-## Step 1: Configure Assets (Crucial)
+## Step 1: Configure Assets
 
-MoltenDb runs its database engine inside a background Web Worker and relies on WebAssembly (WASM). You must tell Angular to serve these compiled files as public assets so the browser can load them.
+MoltenDb runs its database engine inside a background Web Worker and relies on WebAssembly (WASM). You must tell Angular to serve these compiled files as public assets.
 
-Update the `assets` array in your `angular.json` to include the MoltenDb distribution files:
+Update the `assets` array in your `angular.json`:
 
 ```json
 "assets": [
@@ -64,7 +58,7 @@ Update the `assets` array in your `angular.json` to include the MoltenDb distrib
 
 ## Step 2: Provide MoltenDb
 
-Initialize MoltenDb in your app's root configuration (`app.config.ts`). This boots the engine, handles leader election across tabs, and makes the database available to your entire application.
+Initialise MoltenDb in your root `app.config.ts`:
 
 ```typescript
 import { ApplicationConfig } from '@angular/core';
@@ -73,18 +67,8 @@ import { provideMoltenDb } from '@moltendb-web/angular';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideMoltenDb({
-      name: 'local_test_db',
+      name: 'my_app_db',
       workerUrl: '/moltendb-worker.js',
-      
-      // 🚀 New Hybrid Bitcask & Security Properties
-      hotThreshold: 25000,          // Keep up to 25k docs in RAM per collection
-      encryptionKey: 'user-secret', // Enable at-rest encryption in OPFS
-      writeMode: 'sync',            // Use 'sync' for maximum durability
-
-      // 🛡️ Safety & Limits
-      maxBodySize: 10485760,        // 10MB limit
-      maxKeysPerRequest: 1000,      // Maximum number of keys allowed per JSON request.
-      inMemory: false,              // Set to true for ephemeral/CI mode (no OPFS writes)
     })
   ]
 };
@@ -94,55 +78,83 @@ export const appConfig: ApplicationConfig = {
 
 ## Step 3: Fetching and Mutating Data
 
-This library provides two distinct ways to interact with your database, depending on whether you are binding data to the UI or performing background mutations.
+### Reactive data — `moltenDbResource()`
 
-### 1. The Reactive Way: `moltenDbResource`
-
-Use `moltenDbResource` when you want to display data in your template. It automatically handles loading states, catches errors, and listens for live database changes to keep your UI instantly synced across tabs.
-
-It pre-binds the collection for you, keeping your queries incredibly clean. The query function receives the pre-bound `collection` and the full `client` as arguments:
+Use `moltenDbResource` to bind data to your template. It handles loading states, errors, and live collection updates automatically.
 
 ```typescript
 import { Component } from '@angular/core';
 import { moltenDbResource } from '@moltendb-web/angular';
 
-interface UserDoc {
+interface Laptop {
   _key: string;
-  name: string;
-  role: string;
+  brand: string;
+  model: string;
+  price: number;
 }
 
 @Component({
-  selector: 'app-users',
+  selector: 'app-laptops',
   template: `
-    @if (users.isLoading() && !users.value()) {
-      <p>Loading...</p>
+    @if (laptops.isLoading() && !laptops.value()) {
+      <p>Loading…</p>
     }
-
-    @if (users.value(); as userList) {
+    @if (laptops.value(); as list) {
       <ul>
-        @for (user of userList; track user._key) {
-          <li>{{ user.name }} ({{ user.role }})</li>
+        @for (item of list; track item._key) {
+          <li>{{ item.brand }} {{ item.model }} — {{ item.price | currency }}</li>
         }
       </ul>
     }
-
-    @if (users.error()) {
-      <div class="alert">{{ users.error().message }}</div>
+    @if (laptops.error()) {
+      <p class="error">{{ laptops.error().message }}</p>
     }
   `
 })
-export class UsersComponent {
-  // ⚡ The resource automatically fetches and updates when 'users' changes!
-  users = moltenDbResource<UserDoc[]>('users', async (collection) => {
-    console.log('Fetching users...');
-    const result = await collection.get().exec();
-    return result as unknown as UserDoc[];
-  });
+export class LaptopsComponent {
+  laptops = moltenDbResource<Laptop[]>('laptops', (col) =>
+    col.get()
+      .where({ in_stock: true })
+      .sort([{ field: 'price', order: 'asc' }])
+      .exec() as Promise<Laptop[]>
+  );
 }
 ```
 
-The returned `MoltenDbResource<T>` object exposes three readonly signals:
+### Imperative access — `moltendbClient()`
+
+Use `moltendbClient()` for mutations and one-off queries triggered by user actions:
+
+```typescript
+import { Component } from '@angular/core';
+import { moltendbClient } from '@moltendb-web/angular';
+
+@Component({ ... })
+export class AdminComponent {
+  private client = moltendbClient();
+
+  async addLaptop() {
+    await this.client.collection('laptops').set({
+      lp_new: { brand: 'Framework', model: 'Laptop 16', price: 1049, in_stock: true }
+    }).exec();
+    // Any moltenDbResource watching 'laptops' refreshes automatically
+  }
+}
+```
+
+---
+
+## Hooks
+
+### `moltendbClient()`
+
+Returns the `MoltenDbClient` instance for imperative database access. Must be called in an injection context.
+
+### `moltenDbResource<T>(collection, queryFn)`
+
+Creates a reactive resource bound to a collection. Automatically re-fetches when the collection is mutated. Must be called in an injection context.
+
+Returns a `MoltenDbResource<T>` with three readonly signals:
 
 | Signal | Type | Description |
 |---|---|---|
@@ -150,39 +162,102 @@ The returned `MoltenDbResource<T>` object exposes three readonly signals:
 | `isLoading` | `Signal<boolean>` | `true` while a fetch is in progress |
 | `error` | `Signal<any \| null>` | The last error, or `null` if none |
 
-### 2. The Imperative Way: `moltendbClient()`
+### `moltenDbReady()`
 
-Use the `moltendbClient()` injection hook when you need to write data, perform one-off queries in response to user actions (like button clicks), or run complex logic outside of the reactive UI flow.
+Returns `true` once MoltenDb has finished initialising. Useful for gating UI until the database is ready. Must be called in an injection context.
 
 ```typescript
 import { Component } from '@angular/core';
-import { moltendbClient } from '@moltendb-web/angular';
+import { moltenDbReady } from '@moltendb-web/angular';
 
 @Component({
-  // ...
+  selector: 'app-shell',
+  template: `
+    @if (!isReady()) {
+      <p>⚙ Initialising database…</p>
+    } @else {
+      <ng-content />
+    }
+  `
 })
-export class AdminComponent {
-  // ⚡ Grab direct, imperative access to the Query Client
-  private client = moltendbClient();
+export class AppShellComponent {
+  isReady = moltenDbReady;
+}
+```
 
-  async addUser() {
-    const randomId = Math.random().toString(36).substring(2, 9);
+### `moltenDbIsLeader()`
 
-    // Direct, imperative database mutation
-    await this.client.collection('users').set({
-      [randomId]: {
-        name: 'Angular Dev ' + randomId,
-        role: 'Admin'
+Returns `true` if the current tab is the **Leader** — the tab running the WASM worker and performing actual writes. Other tabs act as follower proxies. Must be called in an injection context.
+
+```typescript
+import { Component } from '@angular/core';
+import { moltenDbIsLeader } from '@moltendb-web/angular';
+
+@Component({
+  selector: 'app-tab-badge',
+  template: `<span>{{ isLeader() ? '👑 Leader' : '🔗 Follower' }}</span>`
+})
+export class TabBadgeComponent {
+  isLeader = moltenDbIsLeader;
+}
+```
+
+### `moltenDbTerminate()`
+
+Terminates the MoltenDb worker. You must call this before clearing OPFS storage to avoid file-lock conflicts. Must be called in an injection context.
+
+```typescript
+import { Component } from '@angular/core';
+import { moltenDbTerminate } from '@moltendb-web/angular';
+
+@Component({
+  selector: 'app-reset-button',
+  template: `<button (click)="handleReset()">🗑 Reset All Data</button>`
+})
+export class ResetButtonComponent {
+  private terminate = moltenDbTerminate;
+
+  async handleReset() {
+    if (!confirm('Delete all local data?')) return;
+    this.terminate();
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('mydb', { recursive: true });
+    location.reload();
+  }
+}
+```
+
+### `moltenDbEvents(listener)`
+
+Subscribes to real-time mutation events. The `listener` is called with a `DbEvent` whenever any document is created, updated, deleted, or a collection is dropped. Returns an unsubscribe function — call it in `ngOnDestroy` to prevent memory leaks. Must be called in an injection context.
+
+```typescript
+import { Component, OnDestroy } from '@angular/core';
+import { moltenDbEvents } from '@moltendb-web/angular';
+import type { DbEvent } from '@moltendb-web/angular';
+
+@Component({
+  selector: 'app-live-feed',
+  template: `
+    <ul>
+      @for (e of events; track e) {
+        <li>{{ e.event }} — {{ e.collection }}/{{ e.key }}</li>
       }
-    }).exec();
+    </ul>
+  `
+})
+export class LiveFeedComponent implements OnDestroy {
+  events: DbEvent[] = [];
+  private unsub: () => void;
 
-    // Note: Any moltenDbResource listening to the 'users' collection
-    // will automatically refresh instantly after this set()!
+  constructor() {
+    this.unsub = moltenDbEvents((evt) => {
+      this.events = [evt, ...this.events].slice(0, 50);
+    });
   }
 
-  async getUsers() {
-    // One-off imperative commands
-    const allUsers = await this.client.collection('users').get().exec();
+  ngOnDestroy() {
+    this.unsub();
   }
 }
 ```
@@ -191,35 +266,40 @@ export class AdminComponent {
 
 ## API Reference
 
-### `provideMoltenDb(config)`
+| Export | Type | Description |
+|---|---|---|
+| `provideMoltenDb(config)` | Provider | Registers MoltenDb as an Angular environment provider |
+| `moltendbClient()` | Injection hook | Returns the `MoltenDbClient` instance |
+| `moltenDbReady()` | Injection hook | Returns `true` once MoltenDb has finished initialising |
+| `moltenDbIsLeader()` | Injection hook | Returns `true` if the current tab is the Leader |
+| `moltenDbTerminate()` | Injection hook | Terminates the MoltenDb worker — call before clearing OPFS storage |
+| `moltenDbResource(collection, queryFn)` | Injection hook | Reactive resource with `value`, `isLoading`, `error` signals and auto-refresh |
+| `moltenDbEvents(listener)` | Injection hook | Subscribe to real-time `DbEvent` mutation events; returns unsubscribe function |
+| `DbEvent` | Type | Event object emitted on mutations: `{ event, collection, key, new_v }` |
+| `AngularMoltenDbOptions` | Interface | Config passed to `provideMoltenDb` — extends `MoltenDbOptions` with a required `name` field |
+| `MoltenDbResource<T>` | Interface | Return type of `moltenDbResource`: `{ value, isLoading, error }` signals |
 
-Registers MoltenDb as an Angular environment provider. Call this once in your root `app.config.ts`.
+---
+
+## Configuration
+
+`AngularMoltenDbOptions` extends the core `MoltenDbOptions` with one required field:
 
 | Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `name` | `string` | **Required** | The name of your database file in OPFS. |
-| `workerUrl` | `string \| URL` | `undefined` | Custom path to the `moltendb-worker.js` script. |
-| `hotThreshold` | `number` | `50000` | **Hybrid Bitcask Limit:** Maximum documents per collection to keep in RAM. When exceeded, the oldest documents are paged out to OPFS. |
-| `encryptionKey`| `string` | `undefined` | **At-Rest Encryption:** If provided, all data in OPFS is encrypted using XChaCha20-Poly1305. |
-| `writeMode` | `'async' \| 'sync'` | `'async'` | **Durability vs Speed:** `'async'` is blazing fast (high throughput), while `'sync'` ensures every write is flushed to disk before returning (safer but slower). **Note:** `async` is recommended for most web apps to avoid blocking during heavy write bursts. |
-| `maxBodySize` | `number` | `10485760` | **Payload Limit:** Max body size in bytes. |
-| `maxKeysPerRequest` | `number` | `1000` | **Batch Limit:** Maximum number of keys allowed in a single request (e.g. a batch delete or fetch). |
-| `inMemory` | `boolean` | `false` | **Ephemeral Mode:** Run entirely in RAM — no OPFS writes, no WAL. All data is lost when the worker is terminated. Ideal for CI environments and ephemeral caches. |
-| `rateLimitRequests`| `number` | `100` | (Server Parity) Max requests allowed per rate-limit window. |
-| `rateLimitWindow` | `number` | `60` | (Server Parity) Size of the rate-limit window in seconds. |
+|---|---|---|---|
+| `name` | `string` | **required** | Database name (used as the OPFS directory name) |
+| `inMemory` | `boolean` | `false` | Run entirely in RAM — no OPFS writes. Data persists as long as at least one tab is open; any tab refresh or close wipes the shared store for all tabs |
+| `encryptionKey` | `string` | `undefined` | Password for at-rest encryption. If omitted, data is stored as plain JSON |
+| `writeMode` | `'async' \| 'sync'` | `'async'` | Storage write mode: `'async'` for high throughput or `'sync'` for durable writes |
+| `hotThreshold` | `number` | `50000` | Maximum documents per collection to keep in RAM |
+| `maxBodySize` | `number` | `undefined` | Maximum request body size in bytes |
+| `maxKeysPerRequest` | `number` | `1000` | Maximum number of keys allowed per JSON request |
+| `workerUrl` | `string \| URL` | `undefined` | Custom URL or path to `moltendb-worker.js` |
 
-### `moltenDbResource<T>(collection, queryFn)`
+---
 
-Creates a reactive resource bound to a collection. Must be called in an injection context (e.g. inside a component class field initializer).
+## Notes
 
-| Parameter | Type | Description |
-|---|---|---|
-| `collection` | `string` | The collection name to bind to |
-| `queryFn` | `(collection, client) => Promise<T>` | Async function receiving the pre-bound collection and the full `MoltenDbClient` |
-
-Returns a `MoltenDbResource<T>` with `value`, `isLoading`, and `error` signals.
-
-### `moltendbClient()`
-
-An injection hook that returns the underlying `MoltenDbClient` instance for imperative database access. Must be called in an injection context.
-
+- `provideMoltenDb()` uses Angular's `APP_INITIALIZER` to block app bootstrap until the database is ready — no need to check a `isReady` flag in most components.
+- Multiple apps using the **same `name`** will share the same underlying OPFS storage and sync across tabs via the built-in leader/follower mechanism.
+- `moltenDbResource` re-fetches automatically when the bound collection is mutated by any tab — no manual refresh needed.
