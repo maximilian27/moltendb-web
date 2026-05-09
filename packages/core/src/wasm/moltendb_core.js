@@ -31,47 +31,6 @@ export class WorkerDb {
         wasm.__wbg_workerdb_free(ptr, 0);
     }
     /**
-     * Execute an analytics query and return the result as a JSON string.
-     *
-     * This is the method called by the dashboard's auto-refresh loop:
-     *   `const resultStr = db.analytics(JSON.stringify(query))`
-     *
-     * Takes a JSON string (not a JsValue) because the analytics query format
-     * is complex and easier to pass as a pre-serialized string from JavaScript.
-     *
-     * Returns a JSON string (not a JsValue) so JavaScript can parse it with
-     * `JSON.parse(resultStr)` and access `result` and `metadata`.
-     *
-     * Example input:
-     *   `'{"collection":"events","metric":{"type":"COUNT"},"where":{"event_type":"button_click"}}'`
-     *
-     * Example output:
-     *   `'{"result":42,"metadata":{"execution_time_ms":0,"rows_scanned":42}}'`
-     *
-     * `#[wasm_bindgen(js_name = analytics)]` sets the JavaScript method name to
-     * "analytics" (matching the call in analytics-worker.js).
-     * @param {string} query_json
-     * @returns {string}
-     */
-    analytics(query_json) {
-        let deferred2_0;
-        let deferred2_1;
-        try {
-            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            const ptr0 = passStringToWasm0(query_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
-            const len0 = WASM_VECTOR_LEN;
-            wasm.workerdb_analytics(retptr, this.__wbg_ptr, ptr0, len0);
-            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            deferred2_0 = r0;
-            deferred2_1 = r1;
-            return getStringFromWasm0(r0, r1);
-        } finally {
-            wasm.__wbindgen_add_to_stack_pointer(16);
-            wasm.__wbindgen_export4(deferred2_0, deferred2_1, 1);
-        }
-    }
-    /**
      * Initialize the database and open (or create) the OPFS storage file.
      *
      * Called from JavaScript as:
@@ -88,7 +47,6 @@ export class WorkerDb {
      * # Arguments
      * * `db_name` — The name of the OPFS file to open (e.g. "click_analytics_db").
      *   Each unique name is a separate database file in the browser's OPFS storage.
-     * * `hot_threshold` — Optional maximum documents per collection to keep in RAM (default: 50,000).
      * * `encryption_key` — Optional password for at-rest encryption.
      * * `write_mode` — Optional write mode: "async" (default) or "sync".
      * * `max_body_size` — Optional maximum request body size in bytes (default: 10MB).
@@ -97,7 +55,6 @@ export class WorkerDb {
      *   When `true`, all data is lost when the worker is terminated — useful for ephemeral
      *   session caches or testing without touching OPFS storage.
      * @param {string} db_name
-     * @param {number | null} [hot_threshold]
      * @param {string | null} [encryption_key]
      * @param {string | null} [write_mode]
      * @param {number | null} [max_body_size]
@@ -105,14 +62,14 @@ export class WorkerDb {
      * @param {boolean | null} [in_memory]
      * @returns {Promise<WorkerDb>}
      */
-    static create(db_name, hot_threshold, encryption_key, write_mode, max_body_size, max_keys_per_request, in_memory) {
+    static create(db_name, encryption_key, write_mode, max_body_size, max_keys_per_request, in_memory) {
         const ptr0 = passStringToWasm0(db_name, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
         var ptr1 = isLikeNone(encryption_key) ? 0 : passStringToWasm0(encryption_key, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         var len1 = WASM_VECTOR_LEN;
         var ptr2 = isLikeNone(write_mode) ? 0 : passStringToWasm0(write_mode, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         var len2 = WASM_VECTOR_LEN;
-        const ret = wasm.workerdb_create(ptr0, len0, isLikeNone(hot_threshold) ? 0x100000001 : (hot_threshold) >>> 0, ptr1, len1, ptr2, len2, isLikeNone(max_body_size) ? 0x100000001 : (max_body_size) >>> 0, isLikeNone(max_keys_per_request) ? 0x100000001 : (max_keys_per_request) >>> 0, isLikeNone(in_memory) ? 0xFFFFFF : in_memory ? 1 : 0);
+        const ret = wasm.workerdb_create(ptr0, len0, ptr1, len1, ptr2, len2, isLikeNone(max_body_size) ? 0x100000001 : (max_body_size) >>> 0, isLikeNone(max_keys_per_request) ? 0x100000001 : (max_keys_per_request) >>> 0, isLikeNone(in_memory) ? 0xFFFFFF : in_memory ? 1 : 0);
         return takeObject(ret);
     }
     /**
@@ -420,7 +377,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_4242(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_3781(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -454,14 +411,6 @@ function __wbg_get_imports() {
         __wbg_now_a9b7df1cbee90986: function() {
             const ret = Date.now();
             return ret;
-        },
-        __wbg_now_e7c6795a7f81e10f: function(arg0) {
-            const ret = getObject(arg0).now();
-            return ret;
-        },
-        __wbg_performance_3fcf6e32a7e1ed0a: function(arg0) {
-            const ret = getObject(arg0).performance;
-            return addHeapObject(ret);
         },
         __wbg_process_44c7a14e11e9f69e: function(arg0) {
             const ret = getObject(arg0).process;
@@ -567,8 +516,8 @@ function __wbg_get_imports() {
             return ret;
         }, arguments); },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 776, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_4230);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 724, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_3769);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -610,10 +559,10 @@ function __wbg_get_imports() {
     };
 }
 
-function __wasm_bindgen_func_elem_4230(arg0, arg1, arg2) {
+function __wasm_bindgen_func_elem_3769(arg0, arg1, arg2) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.__wasm_bindgen_func_elem_4230(retptr, arg0, arg1, addHeapObject(arg2));
+        wasm.__wasm_bindgen_func_elem_3769(retptr, arg0, arg1, addHeapObject(arg2));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         if (r1) {
@@ -624,8 +573,8 @@ function __wasm_bindgen_func_elem_4230(arg0, arg1, arg2) {
     }
 }
 
-function __wasm_bindgen_func_elem_4242(arg0, arg1, arg2, arg3) {
-    wasm.__wasm_bindgen_func_elem_4242(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+function __wasm_bindgen_func_elem_3781(arg0, arg1, arg2, arg3) {
+    wasm.__wasm_bindgen_func_elem_3781(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 const WorkerDbFinalization = (typeof FinalizationRegistry === 'undefined')
