@@ -18,28 +18,6 @@ export class WorkerDb {
     free(): void;
     [Symbol.dispose](): void;
     /**
-     * Execute an analytics query and return the result as a JSON string.
-     *
-     * This is the method called by the dashboard's auto-refresh loop:
-     *   `const resultStr = db.analytics(JSON.stringify(query))`
-     *
-     * Takes a JSON string (not a JsValue) because the analytics query format
-     * is complex and easier to pass as a pre-serialized string from JavaScript.
-     *
-     * Returns a JSON string (not a JsValue) so JavaScript can parse it with
-     * `JSON.parse(resultStr)` and access `result` and `metadata`.
-     *
-     * Example input:
-     *   `'{"collection":"events","metric":{"type":"COUNT"},"where":{"event_type":"button_click"}}'`
-     *
-     * Example output:
-     *   `'{"result":42,"metadata":{"execution_time_ms":0,"rows_scanned":42}}'`
-     *
-     * `#[wasm_bindgen(js_name = analytics)]` sets the JavaScript method name to
-     * "analytics" (matching the call in analytics-worker.js).
-     */
-    analytics(query_json: string): string;
-    /**
      * Initialize the database and open (or create) the OPFS storage file.
      *
      * Called from JavaScript as:
@@ -56,7 +34,6 @@ export class WorkerDb {
      * # Arguments
      * * `db_name` — The name of the OPFS file to open (e.g. "click_analytics_db").
      *   Each unique name is a separate database file in the browser's OPFS storage.
-     * * `hot_threshold` — Optional maximum documents per collection to keep in RAM (default: 50,000).
      * * `encryption_key` — Optional password for at-rest encryption.
      * * `write_mode` — Optional write mode: "async" (default) or "sync".
      * * `max_body_size` — Optional maximum request body size in bytes (default: 10MB).
@@ -65,7 +42,7 @@ export class WorkerDb {
      *   When `true`, all data is lost when the worker is terminated — useful for ephemeral
      *   session caches or testing without touching OPFS storage.
      */
-    static create(db_name: string, hot_threshold?: number | null, encryption_key?: string | null, write_mode?: string | null, max_body_size?: number | null, max_keys_per_request?: number | null, in_memory?: boolean | null): Promise<WorkerDb>;
+    static create(db_name: string, encryption_key?: string | null, write_mode?: string | null, max_body_size?: number | null, max_keys_per_request?: number | null, in_memory?: boolean | null): Promise<WorkerDb>;
     /**
      * Route an incoming message from the JavaScript worker to the correct handler.
      *
@@ -100,12 +77,11 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_workerdb_free: (a: number, b: number) => void;
-    readonly workerdb_analytics: (a: number, b: number, c: number, d: number) => void;
-    readonly workerdb_create: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly workerdb_create: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
     readonly workerdb_handle_message: (a: number, b: number, c: number) => void;
     readonly workerdb_subscribe: (a: number, b: number) => void;
-    readonly __wasm_bindgen_func_elem_4220: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_4230: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3769: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3781: (a: number, b: number, c: number, d: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

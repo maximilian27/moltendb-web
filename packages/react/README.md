@@ -278,7 +278,6 @@ function LiveFeed() {
 | `inMemory` | `boolean` | `false` | Run entirely in RAM — no OPFS writes. Data persists as long as at least one tab is open; any tab refresh or close wipes the shared store for all tabs |
 | `encryptionKey` | `string` | `undefined` | Password for at-rest encryption. If omitted, data is stored as plain JSON |
 | `writeMode` | `'async' \| 'sync'` | `'async'` | Storage write mode: `'async'` for high throughput or `'sync'` for durable writes |
-| `hotThreshold` | `number` | `50000` | Maximum documents per collection to keep in RAM |
 | `maxBodySize` | `number` | `undefined` | Maximum request body size in bytes |
 | `maxKeysPerRequest` | `number` | `1000` | Maximum number of keys allowed per JSON request |
 | `workerUrl` | `string \| URL` | `undefined` | Custom URL or path to `moltendb-worker.js` |

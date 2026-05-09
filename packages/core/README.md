@@ -95,7 +95,6 @@ import { MoltenDb } from '@moltendb-web/core';
 import { MoltenDbClient, WorkerTransport } from '@moltendb-web/query';
 
 const db = new MoltenDb('moltendb_demo', {
-  hotThreshold: 25000,          // Keep 25k docs in RAM per collection
   encryptionKey: 'my-secret',    // Enable transparent at-rest encryption
   writeMode: 'sync'             // Ensure every write is flushed to OPFS
 });
@@ -259,7 +258,6 @@ You can customise the database behavior by passing an options object to the `Mol
 
 ```ts
 const db = new MoltenDb('my-app', {
-  hotThreshold: 25000,           // Page to disk after 25k docs
   encryptionKey: 'user-secret',  // Secure at-rest storage in OPFS
   writeMode: 'sync'              // Ensure durability on every write
 });
@@ -270,7 +268,6 @@ await db.init();
 
 | Property | Type | Default | Description                                                                                                                                                                                                                                                      |
 | :--- | :--- | :--- |:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `hotThreshold` | `number` | `50000` | **Hybrid Bitcask Limit:** Maximum documents per collection to keep in RAM. When exceeded, the oldest documents are paged out to OPFS to save memory.                                                                                                             |
 | `encryptionKey` | `string` | `undefined` | **At-Rest Encryption:** If provided, all data written to OPFS is encrypted using XChaCha20-Poly1305. If omitted, data is stored as plain JSON.                                                                                                                   |
 | `writeMode` | `'async' \| 'sync'` | `'async'` | **Durability vs Speed:** `'async'` is blazing fast (high throughput), while `'sync'` ensures every write is flushed to disk before returning (safer but slower). **Note:** `async` is recommended for most web apps to avoid blocking during heavy write bursts. |
 | `workerUrl` | `string \| URL` | `undefined` | Custom path to the Web Worker script.                                                                                                                                                                                                                            |

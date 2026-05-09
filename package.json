@@ -2,7 +2,7 @@
   "name": "@moltendb/monorepo",
   "private": true,
   "license": "MIT",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/maximilian27/moltendb-web"
@@ -15,14 +15,13 @@
     "build:query": "npm run build --workspace=@moltendb-web/query",
     "build:angular": "npm run build --workspace=@moltendb-web/angular",
     "build:react": "npm run build --workspace=@moltendb-web/react",
-    "build:all": "npm run build:core && npm run build:query && npm run build:angular && npm run build:react",
-    "sample": "npm run dev --prefix sample-app"
+    "build:all": "npm run build:core && npm run build:query && npm run build:angular && npm run build:react"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
-    "@moltendb-web/core": "^1.7.0"
+    "@moltendb-web/core": "^1.8.0"
   },
   "dependencies": {
-    "@moltendb-web/query": "^1.7.0"
+    "@moltendb-web/query": "^1.8.0"
   }
 }

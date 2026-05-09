@@ -1,5 +1,11 @@
 # @moltendb-web/query
 
+## 1.8.0
+
+### Minor Changes
+
+- 864bb59: Remove hotThreshold property from the core. This affects all packages and is a breaking change
+
 ## 1.7.0
 
 ### Minor Changes
