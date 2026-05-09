@@ -14,7 +14,6 @@ self.onmessage = async (e: MessageEvent) => {
         // Pass all config flags to Rust
         const instance = await WorkerDb.create(
             payload.dbName as string,
-            payload.hotThreshold as number | undefined,
             payload.encryptionKey as string | undefined,
             payload.writeMode as string | undefined,
             payload.maxBodySize as number | undefined,
