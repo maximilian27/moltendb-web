@@ -4,9 +4,6 @@ export interface MoltenDbOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
 
-  /** Maximum documents per collection to keep in RAM. Default: 50,000. */
-  hotThreshold?: number;
-
   /** Password for at-rest encryption. If not provided, data is stored as plain JSON. */
   encryptionKey?: string;
 
@@ -171,7 +168,6 @@ export class MoltenDb {
     await this.sendMessage('init', {
       dbName: this.dbName,
       encryptionKey: this.options.encryptionKey,
-      hotThreshold: this.options.hotThreshold,
       inMemory: this.options.inMemory,
       maxBodySize: this.options.maxBodySize,
       maxKeysPerRequest: this.options.maxKeysPerRequest,
@@ -313,6 +309,23 @@ export class MoltenDb {
 
   compact(): Promise<unknown> {
     return this.sendMessage('compact');
+  }
+
+  /**
+   * Truncate and close the OPFS file so the directory can be removed.
+   *
+   * Works from any tab — followers automatically route this through the leader
+   * via BroadcastChannel, so the leader worker (which holds the exclusive
+   * FileSystemSyncAccessHandle) is the one that actually closes the file.
+   *
+   * After this resolves, call:
+   *   `const root = await navigator.storage.getDirectory();`
+   *   `const root = await navigator.storage.getDirectory();`
+   *   `await root.removeEntry(dbName, { recursive: true });`
+   * then reload the page.
+   */
+  clearOpfs(): Promise<unknown> {
+    return this.sendMessage('clear_opfs');
   }
 
   disconnect() {
