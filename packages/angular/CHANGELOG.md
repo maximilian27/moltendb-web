@@ -1,5 +1,17 @@
 # @moltendb-web/angular
 
+## 1.8.0
+
+### Minor Changes
+
+- 864bb59: Remove hotThreshold property from the core. This affects all packages and is a breaking change
+
+### Patch Changes
+
+- Updated dependencies [864bb59]
+  - @moltendb-web/core@1.8.0
+  - @moltendb-web/query@1.8.0
+
 ## 1.7.0
 
 ### Minor Changes
