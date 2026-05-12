@@ -87,7 +87,6 @@ export class WorkerDb {
      *   - "update"   → patch/merge documents:      { collection, data: { key: patch, ... } }
      *   - "delete"   → delete documents or drop:   { collection, keys: ... } or { drop: true }
      *   - "compact"  → compact the OPFS log file
-     *   - "get_size" → return current OPFS file size in bytes
      *   - "clear"    → wipe all in-memory state (in-memory mode only)
      *
      * Returns a JsValue result on success, or a JsValue error string on failure.
@@ -232,9 +231,6 @@ function __wbg_get_imports() {
             const ret = Object.entries(getObject(arg0));
             return addHeapObject(ret);
         },
-        __wbg_error_2001591ad2463697: function(arg0) {
-            console.error(getObject(arg0));
-        },
         __wbg_error_a6fa202b58aa1cd3: function(arg0, arg1) {
             let deferred0_0;
             let deferred0_1;
@@ -377,7 +373,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_3781(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_4017(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -516,8 +512,8 @@ function __wbg_get_imports() {
             return ret;
         }, arguments); },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 724, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_3769);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 721, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_4005);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -559,10 +555,10 @@ function __wbg_get_imports() {
     };
 }
 
-function __wasm_bindgen_func_elem_3769(arg0, arg1, arg2) {
+function __wasm_bindgen_func_elem_4005(arg0, arg1, arg2) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.__wasm_bindgen_func_elem_3769(retptr, arg0, arg1, addHeapObject(arg2));
+        wasm.__wasm_bindgen_func_elem_4005(retptr, arg0, arg1, addHeapObject(arg2));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         if (r1) {
@@ -573,8 +569,8 @@ function __wasm_bindgen_func_elem_3769(arg0, arg1, arg2) {
     }
 }
 
-function __wasm_bindgen_func_elem_3781(arg0, arg1, arg2, arg3) {
-    wasm.__wasm_bindgen_func_elem_3781(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+function __wasm_bindgen_func_elem_4017(arg0, arg1, arg2, arg3) {
+    wasm.__wasm_bindgen_func_elem_4017(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 const WorkerDbFinalization = (typeof FinalizationRegistry === 'undefined')
