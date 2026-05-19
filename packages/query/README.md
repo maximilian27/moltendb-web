@@ -6,15 +6,20 @@ Works in vanilla JavaScript and TypeScript. Compiles as an npm module (CJS + ESM
 
 ### 🌋 Explore the Full Functionality
 
-The best way to experience the MoltenDb query builder is through our **[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)**. It contains a complete, live environment where you can test query builder expressions, perform mutations, and see real-time events without any local setup.
+The best way to experience the MoltenDb query builder is through our *
+*[Interactive Demo on StackBlitz](https://stackblitz.com/~/github.com/maximilian27/moltendb-wasm-demo?file=package.json)
+**. It contains a complete, live environment where you can test query builder expressions, perform mutations, and see
+real-time events without any local setup.
 
 ---
 
 ## What's New in v2.0.0
 
 - **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
-- **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted automatically when the limit is reached.
-- **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically after expiry.
+- **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted
+  automatically when the limit is reached.
+- **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically
+  after expiry.
 
 ---
 
@@ -29,8 +34,8 @@ npm install @moltendb-web/query
 ## Quick start
 
 ```ts
-import { MoltenDb } from '@moltendb-web/core';
-import { MoltenDbClient, WorkerTransport } from '@moltendb-web/query';
+import {MoltenDb} from '@moltendb-web/core';
+import {MoltenDbClient, WorkerTransport} from '@moltendb-web/query';
 
 // 1. Initialize the Core Engine (boots WASM worker)
 const db = new MoltenDb('moltendb_demo');
@@ -42,24 +47,24 @@ const client = new MoltenDbClient(db);
 // SET — insert / upsert
 await client.collection('laptops')
     .set({
-        lp1: { brand: 'Lenovo', model: 'ThinkPad X1', price: 1499, in_stock: true },
-        lp2: { brand: 'Apple',  model: 'MacBook Pro',  price: 3499, in_stock: true },
+      lp1: {brand: 'Lenovo', model: 'ThinkPad X1', price: 1499, in_stock: true},
+      lp2: {brand: 'Apple', model: 'MacBook Pro', price: 3499, in_stock: true},
     })
     .exec();
 
 // GET — query with WHERE, field projection, sort and pagination
 const results = await client.collection('laptops')
-  .get()
-  .where({ brand: 'Apple' })
-  .fields(['brand', 'model', 'price'])
-  .sort([{ field: 'price', order: 'asc' }])
-  .count(5)
-  .exec();
+    .get()
+    .where({brand: 'Apple'})
+    .fields(['brand', 'model', 'price'])
+    .sort([{field: 'price', order: 'asc'}])
+    .count(5)
+    .exec();
 
 // UPDATE — partial patch (only listed fields are changed)
 await client.collection('laptops')
-  .update({ lp1: { price: 1749, in_stock: false } })
-  .exec();
+    .update({lp1: {price: 1749, in_stock: false}})
+    .exec();
 
 // DELETE — single key
 await client.collection('laptops').delete().keys('lp1').exec();
@@ -71,19 +76,19 @@ await client.collection('laptops').delete().keys(['lp1', 'lp2']).exec();
 await client.collection('laptops').delete().drop().exec();
 
 // DELETE — bulk delete with a where clause (v2.0.0)
-await client.collection('laptops').delete().where({ in_stock: { $eq: false } }).exec();
+await client.collection('laptops').delete().where({in_stock: {$eq: false}}).exec();
 
 // SET — capped collection (v2.0.0)
 await client.collection('recent_events')
-  .set({ evt_001: { type: 'login', user: 'alice' } })
-  .maxSize(5)
-  .exec();
+    .set({evt_001: {type: 'login', user: 'alice'}})
+    .maxSize(5)
+    .exec();
 
 // SET — TTL collection (v2.0.0)
 await client.collection('sessions')
-  .set({ sess_abc: { userId: 'u1', token: 'xyz123' } })
-  .ttl(1800)
-  .exec();
+    .set({sess_abc: {userId: 'u1', token: 'xyz123'}})
+    .ttl(1800)
+    .exec();
 ```
 
 ---
@@ -95,49 +100,49 @@ combinations are caught at compile time by TypeScript.
 
 ### `get()` — read / query
 
-| Method | Description |
-|---|---|
-| `.keys(key \| key[])` | Fetch one or more documents by key |
-| `.where(clause)` | Filter with operators: `$eq $ne $gt $gte $lt $lte $in $nin $contains` (and aliases) |
-| `.fields(string[])` | Return only these fields (dot-notation supported) |
-| `.excludedFields(string[])` | Return everything except these fields |
-| `.joins(JoinSpec[])` | Embed related documents from other collections |
-| `.sort(SortSpec[])` | Sort results (multi-field, asc/desc) |
-| `.count(n)` | Limit results to N documents |
-| `.offset(n)` | Skip first N results (pagination) |
-| `.build()` | Return the raw JSON payload without sending |
-| `.exec()` | Send the query and return the result |
+| Method                      | Description                                                                         |
+|-----------------------------|-------------------------------------------------------------------------------------|
+| `.keys(key \| key[])`       | Fetch one or more documents by key                                                  |
+| `.where(clause)`            | Filter with operators: `$eq $ne $gt $gte $lt $lte $in $nin $contains` (and aliases) |
+| `.fields(string[])`         | Return only these fields (dot-notation supported)                                   |
+| `.excludedFields(string[])` | Return everything except these fields                                               |
+| `.joins(JoinSpec[])`        | Embed related documents from other collections                                      |
+| `.sort(SortSpec[])`         | Sort results (multi-field, asc/desc)                                                |
+| `.count(n)`                 | Limit results to N documents                                                        |
+| `.offset(n)`                | Skip first N results (pagination)                                                   |
+| `.build()`                  | Return the raw JSON payload without sending                                         |
+| `.exec()`                   | Send the query and return the result                                                |
 
 ### `set(data)` — insert / upsert
 
-| Method | Description |
-|---|---|
-| `.extends(map)` | Embed snapshots from other collections at insert time |
-| `.maxSize(n)` | *(v2.0.0)* Cap the collection to N documents; oldest are evicted when full |
+| Method          | Description                                                                  |
+|-----------------|------------------------------------------------------------------------------|
+| `.extends(map)` | Embed snapshots from other collections at insert time                        |
+| `.maxSize(n)`   | *(v2.0.0)* Cap the collection to N documents; oldest are evicted when full   |
 | `.ttl(seconds)` | *(v2.0.0)* Set a time-to-live in seconds; documents are removed after expiry |
-| `.build()` | Return the raw JSON payload without sending |
-| `.exec()` | Send and return `{ count, status }` |
+| `.build()`      | Return the raw JSON payload without sending                                  |
+| `.exec()`       | Send and return `{ count, status }`                                          |
 
 `data` can be a `{ key: document }` map or a `Document[]` array (UUIDv7 keys are auto-assigned for arrays).
 
 ### `update(data)` — partial patch
 
-| Method | Description |
-|---|---|
+| Method     | Description                                 |
+|------------|---------------------------------------------|
 | `.build()` | Return the raw JSON payload without sending |
-| `.exec()` | Send and return `{ count, status }` |
+| `.exec()`  | Send and return `{ count, status }`         |
 
 Only the fields present in each patch object are updated — all other fields are left unchanged.
 
 ### `delete()` — delete documents or drop collection
 
-| Method | Description |
-|---|---|
-| `.keys(key \| key[])` | Delete one or more documents by key |
-| `.where(clause)` | *(v2.0.0)* Bulk-delete all documents matching the filter clause |
-| `.drop()` | Drop the entire collection |
-| `.build()` | Return the raw JSON payload without sending |
-| `.exec()` | Send and return `{ count, status }` |
+| Method                | Description                                                     |
+|-----------------------|-----------------------------------------------------------------|
+| `.keys(key \| key[])` | Delete one or more documents by key                             |
+| `.where(clause)`      | *(v2.0.0)* Bulk-delete all documents matching the filter clause |
+| `.drop()`             | Drop the entire collection                                      |
+| `.build()`            | Return the raw JSON payload without sending                     |
+| `.exec()`             | Send and return `{ count, status }`                             |
 
 ---
 
@@ -145,32 +150,33 @@ Only the fields present in each patch object are updated — all other fields ar
 
 ```ts
 // Exact equality (implicit or explicit)
-.where({ brand: 'Apple' })
-.where({ brand: { $eq: 'Apple' } })
-.where({ brand: { $equals: 'Apple' } }) // alias
+.
+where({brand: 'Apple'})
+    .where({brand: {$eq: 'Apple'}})
+    .where({brand: {$equals: 'Apple'}}) // alias
 
-// Comparison
-.where({ price: { $gt: 1000, $lt: 3000 } })
-.where({ price: { $greaterThan: 1000, $lessThan: 3000 } }) // aliases
-.where({ 'specs.cpu.cores': { $gte: 12 } })
+    // Comparison
+    .where({price: {$gt: 1000, $lt: 3000}})
+    .where({price: {$greaterThan: 1000, $lessThan: 3000}}) // aliases
+    .where({'specs.cpu.cores': {$gte: 12}})
 
-// Not equal
-.where({ 'specs.cpu.brand': { $ne: 'Intel' } })
-.where({ 'specs.cpu.brand': { $notEquals: 'Intel' } }) // alias
+    // Not equal
+    .where({'specs.cpu.brand': {$ne: 'Intel'}})
+    .where({'specs.cpu.brand': {$notEquals: 'Intel'}}) // alias
 
-// In / not-in list
-.where({ brand: { $in: ['Apple', 'Dell'] } })
-.where({ brand: { $oneOf: ['Apple', 'Dell'] } }) // alias
-.where({ brand: { $nin: ['Framework'] } })
-.where({ brand: { $notIn: ['Framework'] } }) // alias
+    // In / not-in list
+    .where({brand: {$in: ['Apple', 'Dell']}})
+    .where({brand: {$oneOf: ['Apple', 'Dell']}}) // alias
+    .where({brand: {$nin: ['Framework']}})
+    .where({brand: {$notIn: ['Framework']}}) // alias
 
-// Contains (string substring or array element)
-.where({ model: { $contains: 'Pro' } })
-.where({ model: { $ct: 'Pro' } }) // alias
-.where({ tags:  { $contains: 'gaming' } })
+    // Contains (string substring or array element)
+    .where({model: {$contains: 'Pro'}})
+    .where({model: {$ct: 'Pro'}}) // alias
+    .where({tags: {$contains: 'gaming'}})
 
-// Multiple conditions (implicit AND)
-.where({ in_stock: true, 'specs.cpu.brand': 'Intel' })
+    // Multiple conditions (implicit AND)
+    .where({in_stock: true, 'specs.cpu.brand': 'Intel'})
 ```
 
 ---
@@ -179,13 +185,13 @@ Only the fields present in each patch object are updated — all other fields ar
 
 ```ts
 const results = await client.collection('laptops')
-  .get()
-  .fields(['brand', 'model', 'price'])
-  .joins([
-    { alias: 'ram',    from: 'memory',  on: 'memory_id',  fields: ['capacity_gb', 'type'] },
-    { alias: 'screen', from: 'display', on: 'display_id', fields: ['refresh_hz', 'panel'] },
-  ])
-  .exec();
+    .get()
+    .fields(['brand', 'model', 'price'])
+    .joins([
+      {alias: 'ram', from: 'memory', on: 'memory_id', fields: ['capacity_gb', 'type']},
+      {alias: 'screen', from: 'display', on: 'display_id', fields: ['refresh_hz', 'panel']},
+    ])
+    .exec();
 // Each result: { brand, model, price, ram: { capacity_gb, type }, screen: { refresh_hz, panel } }
 ```
 
@@ -195,25 +201,25 @@ const results = await client.collection('laptops')
 
 ```ts
 await client.collection('laptops')
-  .set({
-    lp7: {
-      brand: 'MSI', model: 'Titan GT77', price: 3299,
-      specs: { cpu: { brand: 'Intel', cores: 16, ghz: 5.0 } },
-    },
-  })
-  .extends({ ram: 'memory.mem4', screen: 'display.dsp3' })
-  .exec();
+    .set({
+      lp7: {
+        brand: 'MSI', model: 'Titan GT77', price: 3299,
+        specs: {cpu: {brand: 'Intel', cores: 16, ghz: 5.0}},
+      },
+    })
+    .extends({ram: 'memory.mem4', screen: 'display.dsp3'})
+    .exec();
 // lp7 is stored with the full mem4 and dsp3 documents embedded inline.
 ```
 
 **When to use `extends` vs `joins`:**
 
-| | `extends` | `joins` |
-|---|---|---|
-| Resolved at | Insert time (once) | Query time (every request) |
-| Data freshness | Snapshot — may become stale | Always live |
-| Read cost | O(1) — data already embedded | O(1) per join per document |
-| Use when | Data rarely changes, fast reads matter | Data changes frequently, freshness matters |
+|                | `extends`                              | `joins`                                    |
+|----------------|----------------------------------------|--------------------------------------------|
+| Resolved at    | Insert time (once)                     | Query time (every request)                 |
+| Data freshness | Snapshot — may become stale            | Always live                                |
+| Read cost      | O(1) — data already embedded           | O(1) per join per document                 |
+| Use when       | Data rarely changes, fast reads matter | Data changes frequently, freshness matters |
 
 ---
 
@@ -222,10 +228,11 @@ await client.collection('laptops')
 Implement `MoltenTransport` to connect to any backend:
 
 ```ts
-import { MoltenTransport, MoltenDbClient, Document, JsonValue } from '@moltendb-web/query';
+import {MoltenTransport, MoltenDbClient, Document, JsonValue} from '@moltendb-web/query';
 
 class FetchTransport implements MoltenTransport {
-  constructor(private baseUrl: string, private token: string) {}
+  constructor(private baseUrl: string, private token: string) {
+  }
 
   async send(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue> {
     const res = await fetch(`${this.baseUrl}/${action}`, {
@@ -255,7 +262,8 @@ npm run test       # Run the Jest test suite
 
 ## Contributing & Feedback
 
-Found a bug or have a feature request? Please open an issue on the [GitHub issue tracker](https://github.com/maximilian27/moltendb-web/issues).
+Found a bug or have a feature request? Please open an issue on
+the [GitHub issue tracker](https://github.com/maximilian27/moltendb-web/issues).
 
 ---
 

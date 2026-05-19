@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { MoltenDb, MoltenDbOptions } from '@moltendb-web/core';
-import { MoltenDbClient } from '@moltendb-web/query';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { MoltenDb, MoltenDbOptions } from "@moltendb-web/core";
+import { MoltenDbClient } from "@moltendb-web/query";
 
 export interface ReactMoltenDbOptions extends MoltenDbOptions {
   name: string;
@@ -32,9 +38,10 @@ export function MoltenDbProvider({ config, children }: MoltenDbProviderProps) {
   }
 
   useEffect(() => {
-    dbRef.current!.init()
+    dbRef
+      .current!.init()
       .then(() => setIsReady(true))
-      .catch((err) => console.error('[MoltenDb] Failed to initialize', err));
+      .catch((err) => console.error("[MoltenDb] Failed to initialize", err));
   }, []);
 
   return (
@@ -53,7 +60,9 @@ export function MoltenDbProvider({ config, children }: MoltenDbProviderProps) {
 export function useMoltenDbContext(): MoltenDbContextValue {
   const ctx = useContext(MoltenDbContext);
   if (!ctx) {
-    throw new Error('[MoltenDb] useMoltenDbContext must be used inside <MoltenDbProvider>');
+    throw new Error(
+      "[MoltenDb] useMoltenDbContext must be used inside <MoltenDbProvider>"
+    );
   }
   return ctx;
 }

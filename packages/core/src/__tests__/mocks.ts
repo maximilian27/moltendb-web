@@ -9,7 +9,7 @@
  *   • navigator.locks     – synchronous lock simulation
  */
 
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // ─── In-process BroadcastChannel bus ─────────────────────────────────────────
 
@@ -35,7 +35,7 @@ export class FakeBroadcastChannel {
     for (const fn of listeners) {
       // Skip self (mirrors real BroadcastChannel behaviour)
       if (fn === this._boundDispatch) continue;
-      fn(new MessageEvent('message', { data }));
+      fn(new MessageEvent("message", { data }));
     }
   }
 
@@ -85,12 +85,12 @@ export class FakeWorker {
       if (this.terminated) return;
       try {
         const result = this.handler(msg);
-        this.onmessage?.(new MessageEvent('message', { data: { id, result } }));
+        this.onmessage?.(new MessageEvent("message", { data: { id, result } }));
       } catch (err) {
         this.onmessage?.(
-          new MessageEvent('message', {
+          new MessageEvent("message", {
             data: { id, error: String(err) },
-          }),
+          })
         );
       }
     });
@@ -104,9 +104,9 @@ export class FakeWorker {
     const action = msg.action as string;
     const collection = msg.collection as string | undefined;
 
-    if (action === 'init') return { status: 'ok' };
+    if (action === "init") return { status: "ok" };
 
-    if (action === 'set' && collection) {
+    if (action === "set" && collection) {
       const data = msg.data as Record<string, unknown>;
       if (!this.store.has(collection)) this.store.set(collection, new Map());
       for (const [k, v] of Object.entries(data)) {
@@ -115,7 +115,7 @@ export class FakeWorker {
       return null;
     }
 
-    if (action === 'get' && collection) {
+    if (action === "get" && collection) {
       const col = this.store.get(collection);
       if (!col) return null;
       const keys = msg.keys as string | undefined;
@@ -125,13 +125,13 @@ export class FakeWorker {
       return col; // This is a Map!
     }
 
-    if (action === 'delete' && collection) {
+    if (action === "delete" && collection) {
       const keys = msg.keys as string;
       this.store.get(collection)?.delete(keys);
       return null;
     }
 
-    if (action === 'compact') return null;
+    if (action === "compact") return null;
 
     throw new Error(`[FakeWorker] Unknown action: ${action}`);
   }
@@ -166,12 +166,12 @@ export const fakeLocks = {
   request(
     name: string,
     optionsOrCallback: { ifAvailable?: boolean } | LockCallback,
-    maybeCallback?: LockCallback,
+    maybeCallback?: LockCallback
   ): Promise<unknown> {
     let options: { ifAvailable?: boolean } = {};
     let callback: LockCallback;
 
-    if (typeof optionsOrCallback === 'function') {
+    if (typeof optionsOrCallback === "function") {
       callback = optionsOrCallback;
     } else {
       options = optionsOrCallback;
@@ -234,18 +234,18 @@ export function installMocks(factory?: () => FakeWorker): void {
   createdWorkers.length = 0;
 
   vi.stubGlobal(
-    'Worker',
+    "Worker",
     class {
       constructor(_url: string | URL, _opts?: WorkerOptions) {
         const fake = workerFactory!();
         createdWorkers.push(fake);
         return fake;
       }
-    },
+    }
   );
 
-  vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
-  vi.stubGlobal('navigator', {
+  vi.stubGlobal("BroadcastChannel", FakeBroadcastChannel);
+  vi.stubGlobal("navigator", {
     locks: fakeLocks,
     storage: { getDirectory: () => Promise.resolve({}) },
   });

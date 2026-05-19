@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { MoltenDbClient } from '@moltendb-web/query';
-import { useMoltenDbContext } from './MoltenDbContext';
+import { useEffect, useRef, useState } from "react";
+import { MoltenDbClient } from "@moltendb-web/query";
+import { useMoltenDbContext } from "./MoltenDbContext";
 
 export interface MoltenDbResourceResult<T> {
   value: T | undefined;
@@ -18,7 +18,10 @@ export interface MoltenDbResourceResult<T> {
  */
 export function useMoltenDbResource<T>(
   collection: string,
-  queryFn: (collection: ReturnType<MoltenDbClient['collection']>, client: MoltenDbClient) => Promise<T>
+  queryFn: (
+    collection: ReturnType<MoltenDbClient["collection"]>,
+    client: MoltenDbClient
+  ) => Promise<T>
 ): MoltenDbResourceResult<T> {
   const { db, client, isReady } = useMoltenDbContext();
 
@@ -38,14 +41,17 @@ export function useMoltenDbResource<T>(
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const result = await queryFnRef.current(client.collection(collection), client);
+        const result = await queryFnRef.current(
+          client.collection(collection),
+          client
+        );
         if (!cancelled) {
           setValue(result);
           setError(null);
         }
       } catch (err: any) {
         if (!cancelled) {
-          if (err.message?.includes('404')) {
+          if (err.message?.includes("404")) {
             setValue([] as any);
             setError(null);
           } else {

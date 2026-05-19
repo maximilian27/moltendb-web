@@ -1,4 +1,4 @@
-import { inject } from "@angular/core";
+import { DestroyRef, inject } from "@angular/core";
 import { MoltenDbClient } from "@moltendb-web/query";
 import { DbEvent } from "@moltendb-web/core";
 import { MoltenDbService } from "./moltendb.service";
@@ -32,8 +32,10 @@ export async function moltenDbClearOpfs(): Promise<void> {
 
 /**
  * Subscribe to real-time MoltenDb mutation events.
- * Returns an unsubscribe function � call it in ngOnDestroy to prevent memory leaks.
+ * The subscription is automatically cleaned up when the injection context (component/service) is destroyed.
+ * No manual unsubscription or ngOnDestroy needed.
  */
-export function moltenDbEvents(listener: (event: DbEvent) => void): () => void {
-  return inject(MoltenDbService).db.subscribe(listener);
+export function moltenDbEvents(listener: (event: DbEvent) => void): void {
+  const unsub = inject(MoltenDbService).db.subscribe(listener);
+  inject(DestroyRef).onDestroy(() => unsub());
 }

@@ -16,8 +16,11 @@
 
 ### Minor Changes
 
-- 3715d68: @moltendb-web/react v1.6.0 — New React hooks wrapper for MoltenDb (MoltenDbProvider, useMoltenDb, useMoltenDbResource, useMoltenDbReady, useMoltenDbIsLeader, useMoltenDbTerminate, useMoltenDbEvents). Supports React 16.8+. Core and query packages install automatically as dependencies.
-  @moltendb-web/angular — Added moltenDbReady(), moltenDbIsLeader(), moltenDbTerminate(), moltenDbEvents() and re-exported DbEvent type for full API parity with the React package.
+- 3715d68: @moltendb-web/react v1.6.0 — New React hooks wrapper for MoltenDb (MoltenDbProvider, useMoltenDb,
+  useMoltenDbResource, useMoltenDbReady, useMoltenDbIsLeader, useMoltenDbTerminate, useMoltenDbEvents). Supports React
+  16.8+. Core and query packages install automatically as dependencies.
+  @moltendb-web/angular — Added moltenDbReady(), moltenDbIsLeader(), moltenDbTerminate(), moltenDbEvents() and
+  re-exported DbEvent type for full API parity with the React package.
 
 ### Patch Changes
 
@@ -31,12 +34,18 @@
 
 - 5698865: ### Minor Changes
 
-  - **Added `inMemory` option** — run the database entirely in RAM with no OPFS writes. All tabs share a single in-memory store via the leader/follower election; data persists as long as at least one tab is open. When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs. Ideal for ephemeral session caches, testing, and scenarios where persistence is not required.
-  - **Added `maxKeysPerRequest` option** — sets the maximum number of keys allowed per JSON request (default: `1000`). Mirrors the server-side `--max-keys-per-request` flag and the `max_keys_per_request` field in `DbConfig`.
+  - **Added `inMemory` option** — run the database entirely in RAM with no OPFS writes. All tabs share a single
+    in-memory store via the leader/follower election; data persists as long as at least one tab is open. When **any**
+    tab refreshes or closes, the shared RAM store is wiped for all tabs. Ideal for ephemeral session caches, testing,
+    and scenarios where persistence is not required.
+  - **Added `maxKeysPerRequest` option** — sets the maximum number of keys allowed per JSON request (default: `1000`).
+    Mirrors the server-side `--max-keys-per-request` flag and the `max_keys_per_request` field in `DbConfig`.
 
   ### Breaking Changes
 
-  - **Removed `rateLimitRequests` and `rateLimitWindow` options** — these were server-only properties (HTTP rate limiting) that had no effect in the browser context and were incorrectly exposed in the web package. If you were setting these values, you can safely remove them — they were no-ops in the WASM layer.
+  - **Removed `rateLimitRequests` and `rateLimitWindow` options** — these were server-only properties (HTTP rate
+    limiting) that had no effect in the browser context and were incorrectly exposed in the web package. If you were
+    setting these values, you can safely remove them — they were no-ops in the WASM layer.
 
 ### Patch Changes
 
@@ -57,7 +66,8 @@
 
 ### Minor Changes
 
-- c087ed6: `@moltendb-web/core` to expose `hotThreshold`, `encryptionKey`, `writeMode`, `rateLimitRequests`, `rateLimitWindow`, and `maxBodySize` options
+- c087ed6: `@moltendb-web/core` to expose `hotThreshold`, `encryptionKey`, `writeMode`, `rateLimitRequests`,
+  `rateLimitWindow`, and `maxBodySize` options
 
 ### Patch Changes
 
@@ -87,7 +97,8 @@
 
 ### Minor Changes
 
-- 81fd537: The way the rust binary is compiled was changed significantly in the core server repo. Update the naming conventions to match the latest distribution
+- 81fd537: The way the rust binary is compiled was changed significantly in the core server repo. Update the naming
+  conventions to match the latest distribution
 
 ### Patch Changes
 
