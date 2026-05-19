@@ -78,6 +78,14 @@ await client.collection('laptops').delete().drop().exec();
 // DELETE — bulk delete with a where clause (v2.0.0)
 await client.collection('laptops').delete().where({in_stock: {$eq: false}}).exec();
 
+// DELETE — bulk delete up to 5 oldest out-of-stock laptops (v2.0.0)
+await client.collection('laptops')
+    .delete()
+    .where({in_stock: {$eq: false}})
+    .offset(10)
+    .count(5)
+    .exec();
+
 // SET — capped collection (v2.0.0)
 await client.collection('recent_events')
     .set({evt_001: {type: 'login', user: 'alice'}})
@@ -140,6 +148,8 @@ Only the fields present in each patch object are updated — all other fields ar
 |-----------------------|-----------------------------------------------------------------|
 | `.keys(key \| key[])` | Delete one or more documents by key                             |
 | `.where(clause)`      | *(v2.0.0)* Bulk-delete all documents matching the filter clause |
+| `.count(n)`           | *(v2.0.0)* Limit the number of documents to delete              |
+| `.offset(n)`          | *(v2.0.0)* Skip the first N matching documents before deleting  |
 | `.drop()`             | Drop the entire collection                                      |
 | `.build()`            | Return the raw JSON payload without sending                     |
 | `.exec()`             | Send and return `{ count, status }`                             |

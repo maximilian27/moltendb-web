@@ -30,7 +30,7 @@ export interface MoltenDbOptions {
 
 export interface DbEvent {
   type: "event";
-  event: "change" | "delete" | "drop" | "kill";
+  event: "change" | "delete" | "drop" | "kill" | "ttl_expiry";
   collection: string;
   key: string;
   new_v: number | null;
@@ -368,7 +368,7 @@ export class MoltenDb {
 
     this.bc.onmessage = (e) => {
       const data = e.data;
-      // --- THE KILL SWITCH ---
+      // --- THE KILKILL SWITCH ---
       if (data.type === "kill_signal") {
         this.terminate(); // Kills zombie worker instantly
         this.dispatchEvent({

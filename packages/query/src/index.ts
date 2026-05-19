@@ -446,7 +446,7 @@ export class UpdateQuery {
 /**
  * Builder for DELETE operations.
  *
- * Allowed fields: collection, keys, drop, where
+ * Allowed fields: collection, keys, drop, where, count, offset
  *
  * @example
  * // Delete a single document
@@ -458,8 +458,8 @@ export class UpdateQuery {
  * // Drop the entire collection
  * await db.collection('laptops').delete().drop().exec();
  *
- * // Bulk delete using a where clause
- * await db.collection('laptops').delete().where({ in_stock: { $eq: false } }).exec();
+ * // Bulk delete using a where clause (up to 5 documents)
+ * await db.collection('laptops').delete().where({ in_stock: { $eq: false } }).count(5).exec();
  */
 export class DeleteQuery {
   private payload: Document;
@@ -507,6 +507,30 @@ export class DeleteQuery {
    */
   drop(): this {
     this.payload["drop"] = true;
+    return this;
+  }
+
+  /**
+   * Limit the maximum number of documents to delete (applied after filtering).
+   * Typically used with {@link where}.
+   *
+   * @example
+   * .count(10)
+   */
+  count(n: number): this {
+    this.payload["count"] = n as JsonValue;
+    return this;
+  }
+
+  /**
+   * Skip the first N documents that match the filter before deleting.
+   * Typically used with {@link where} and {@link count}.
+   *
+   * @example
+   * .offset(5)
+   */
+  offset(n: number): this {
+    this.payload["offset"] = n as JsonValue;
     return this;
   }
 
