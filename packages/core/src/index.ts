@@ -150,6 +150,7 @@ export class MoltenDb {
 
     this.worker.onmessage = (e) => {
       const data = e.data;
+
       if (data.type === 'event') {
         this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
         this.bc.postMessage(data);
@@ -176,6 +177,13 @@ export class MoltenDb {
 
     this.bc.onmessage = async (e) => {
       const msg = e.data;
+
+      // --- THE KILL SWITCH ---
+      if (msg.type === 'kill_signal') {
+        this.terminate(); // Kills zombie worker instantly
+        this.dispatchEvent({ type: 'event', event: 'drop', collection: '*', key: '*', new_v: null });
+        return;
+      }
       // Any tab unloading in in-memory mode broadcasts this — wipe the shared RAM store.
       if (msg.type === 'clear_all') {
         try {
@@ -208,6 +216,12 @@ export class MoltenDb {
 
     this.bc.onmessage = (e) => {
       const data = e.data;
+      // --- THE KILL SWITCH ---
+      if (data.type === 'kill_signal') {
+        this.terminate(); // Kills zombie worker instantly
+        this.dispatchEvent({ type: 'event', event: 'drop', collection: '*', key: '*', new_v: null });
+        return;
+      }
       if (data.type === 'event') {
         this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
         return;
@@ -312,20 +326,26 @@ export class MoltenDb {
   }
 
   /**
-   * Truncate and close the OPFS file so the directory can be removed.
+   * Truncate and close the OPFS file handle, then remove the OPFS directory.
    *
-   * Works from any tab — followers automatically route this through the leader
-   * via BroadcastChannel, so the leader worker (which holds the exclusive
-   * FileSystemSyncAccessHandle) is the one that actually closes the file.
+   * Works from any tab — followers automatically route the `clear_opfs` message
+   * through the leader via BroadcastChannel, so the leader worker (which holds
+   * the exclusive FileSystemSyncAccessHandle) is the one that actually closes
+   * the file before the directory is removed.
    *
-   * After this resolves, call:
-   *   `const root = await navigator.storage.getDirectory();`
-   *   `const root = await navigator.storage.getDirectory();`
-   *   `await root.removeEntry(dbName, { recursive: true });`
-   * then reload the page.
+   * After this resolves, call `location.reload()` if needed or re-initialize the database.
    */
-  clearOpfs(): Promise<unknown> {
-    return this.sendMessage('clear_opfs');
+  async clearOpfs(): Promise<void> {
+    // 1. Tell Rust to flush, truncate, and CLOSE the FileSystemSyncAccessHandle.
+    //    Without this, removeEntry() throws "No modification allowed".
+    await this.sendMessage('clear_opfs');
+
+    // 2. Remove the OPFS directory — the handle is now closed, so this succeeds.
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry(this.dbName, { recursive: true });
+
+    // 3. Hit the Kill Switch for all other tabs
+    this.bc?.postMessage({ type: 'kill_signal' });
   }
 
   disconnect() {
@@ -338,5 +358,7 @@ export class MoltenDb {
       this.worker.terminate();
       this.worker = null;
     }
+    this.initPromise = null;
+    this.isLeader = false;
   }
 }
