@@ -1,7 +1,7 @@
-import { inject } from '@angular/core';
-import { MoltenDbClient } from '@moltendb-web/query';
-import { DbEvent } from '@moltendb-web/core';
-import { MoltenDbService } from './moltendb.service';
+import { inject } from "@angular/core";
+import { MoltenDbClient } from "@moltendb-web/query";
+import { DbEvent } from "@moltendb-web/core";
+import { MoltenDbService } from "./moltendb.service";
 
 /** Functional injection hook to access the MoltenDb Query Client. */
 export function moltendbClient(): MoltenDbClient {
@@ -22,6 +22,13 @@ export function moltenDbIsLeader(): boolean {
 export function moltenDbTerminate(): void {
   inject(MoltenDbService).db.terminate();
 }
+/**
+ * Flushes and closes the OPFS sync handle.
+ * Call this before `moltenDbTerminate()` to avoid "No modification allowed" errors.
+ */
+export async function moltenDbClearOpfs(): Promise<void> {
+  await inject(MoltenDbService).db.clearOpfs();
+}
 
 /**
  * Subscribe to real-time MoltenDb mutation events.
@@ -30,4 +37,3 @@ export function moltenDbTerminate(): void {
 export function moltenDbEvents(listener: (event: DbEvent) => void): () => void {
   return inject(MoltenDbService).db.subscribe(listener);
 }
-

@@ -212,24 +212,30 @@ export class TabBadgeComponent {
 
 ### `moltenDbTerminate()`
 
-Terminates the MoltenDb worker. You must call this before clearing OPFS storage to avoid file-lock conflicts. Must be called in an injection context.
+Terminates the MoltenDb worker. Must be called in an injection context.
+
+### `moltenDbClearOpfs()` *(v2.0.0)*
+
+Flushes and closes the OPFS sync handle. Call this **before** `moltenDbTerminate()` — without it the browser throws a "No modification allowed" error when removing the OPFS directory. Must be called in an injection context.
 
 ```typescript
 import { Component } from '@angular/core';
-import { moltenDbTerminate } from '@moltendb-web/angular';
+import { moltenDbClearOpfs, moltenDbTerminate } from '@moltendb-web/angular';
 
 @Component({
   selector: 'app-reset-button',
   template: `<button (click)="handleReset()">🗑 Reset All Data</button>`
 })
 export class ResetButtonComponent {
+  private clearOpfs = moltenDbClearOpfs;
   private terminate = moltenDbTerminate;
 
   async handleReset() {
-    if (!confirm('Delete all local data?')) return;
+    if (!confirm('This will delete all local data and reload. Continue?')) return;
+    // 1. Flush and close the OPFS sync handle
+    await this.clearOpfs();
+    // 2. Now safe to terminate the worker
     this.terminate();
-    const root = await navigator.storage.getDirectory();
-    await root.removeEntry('mydb', { recursive: true });
     location.reload();
   }
 }
@@ -280,7 +286,8 @@ export class LiveFeedComponent implements OnDestroy {
 | `moltendbClient()` | Injection hook | Returns the `MoltenDbClient` instance |
 | `moltenDbReady()` | Injection hook | Returns `true` once MoltenDb has finished initialising |
 | `moltenDbIsLeader()` | Injection hook | Returns `true` if the current tab is the Leader |
-| `moltenDbTerminate()` | Injection hook | Terminates the MoltenDb worker — call before clearing OPFS storage |
+| `moltenDbTerminate()` | Injection hook | Terminates the MoltenDb worker |
+| `moltenDbClearOpfs()` | Injection hook | *(v2.0.0)* Flush and close the OPFS sync handle — call before `moltenDbTerminate()` |
 | `moltenDbResource(collection, queryFn)` | Injection hook | Reactive resource with `value`, `isLoading`, `error` signals and auto-refresh |
 | `moltenDbEvents(listener)` | Injection hook | Subscribe to real-time `DbEvent` mutation events; returns unsubscribe function |
 | `DbEvent` | Type | Event object emitted on mutations: `{ event, collection, key, new_v }` |

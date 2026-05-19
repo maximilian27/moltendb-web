@@ -212,19 +212,25 @@ function TabBadge() {
 
 ### `useMoltenDbTerminate()`
 
-Returns a function that terminates the MoltenDb worker. You must call this before clearing OPFS storage to avoid file-lock conflicts. Must be used inside `<MoltenDbProvider>`.
+Returns a function that terminates the MoltenDb worker. Must be used inside `<MoltenDbProvider>`.
+
+### `useMoltenDbClearOpfs()` *(v2.0.0)*
+
+Returns an async function that flushes and closes the OPFS sync handle. Call this **before** `useMoltenDbTerminate()` — without it the browser throws a "No modification allowed" error when removing the OPFS directory. Must be used inside `<MoltenDbProvider>`.
 
 ```tsx
-import { useMoltenDbTerminate } from '@moltendb-web/react';
+import { useMoltenDbClearOpfs, useMoltenDbTerminate } from '@moltendb-web/react';
 
 function ResetButton() {
+  const clearOpfs = useMoltenDbClearOpfs();
   const terminate = useMoltenDbTerminate();
 
   const handleReset = async () => {
-    if (!confirm('Delete all local data?')) return;
+    if (!confirm('This will delete all local data and reload. Continue?')) return;
+    // 1. Flush and close the OPFS sync handle
+    await clearOpfs();
+    // 2. Now safe to terminate the worker
     terminate();
-    const root = await navigator.storage.getDirectory();
-    await root.removeEntry('mydb', { recursive: true });
     location.reload();
   };
 
@@ -268,7 +274,8 @@ function LiveFeed() {
 | `useMoltenDb()` | Hook | Returns the `MoltenDbClient` instance |
 | `useMoltenDbReady()` | Hook | Returns `true` once MoltenDb has finished initialising |
 | `useMoltenDbIsLeader()` | Hook | Returns `true` if the current tab is the Leader (running the WASM worker) |
-| `useMoltenDbTerminate()` | Hook | Returns a function that terminates the MoltenDb worker — call before clearing OPFS storage |
+| `useMoltenDbTerminate()` | Hook | Returns a function that terminates the MoltenDb worker |
+| `useMoltenDbClearOpfs()` | Hook | *(v2.0.0)* Returns an async function that flushes and closes the OPFS sync handle — call before `useMoltenDbTerminate()` |
 | `useMoltenDbResource(collection, queryFn)` | Hook | Reactive data fetching with `value`, `isLoading`, `error` and auto-refresh on mutations |
 | `useMoltenDbEvents(listener)` | Hook | Subscribe to real-time `DbEvent` mutation events |
 | `DbEvent` | Type | Event object emitted on mutations: `{ event, collection, key, new_v }` |
