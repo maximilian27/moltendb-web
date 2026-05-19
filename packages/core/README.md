@@ -48,6 +48,18 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 
 ---
 
+## What's New in v2.0.0
+
+### Query Builder
+- **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys (see [`@moltendb-web/query`](../query/README.md)).
+- **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted automatically when the limit is reached.
+- **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically after expiry.
+
+### Core Engine Performance
+- **`Arc<str>` collection-key interning** — the outer `DashMap` key was changed from `String` to `Arc<str>`. During bulk insert and WAL replay all documents in the same collection share a single pointer instead of allocating a new `String` per document. Saves ~30 B per doc (~30 MB at 1 M docs) and reduces allocator pressure during startup.
+- **MessagePack in-memory storage** — the hot document map was switched from `serde_json::Value` to `Box<[u8]>` (MessagePack bytes). Reduces steady-state RSS for 1 M docs from ~4 GB to ~500 MB (~8× lower). Decoding to `Value` happens lazily on read; write paths encode via `rmp_serde`.
+---
+
 ## Installation
 
 MoltenDb is split into two packages: the core engine and the type-safe, chainable query builder.

@@ -10,6 +10,14 @@ The best way to experience the MoltenDb query builder is through our **[Interact
 
 ---
 
+## What's New in v2.0.0
+
+- **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
+- **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted automatically when the limit is reached.
+- **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically after expiry.
+
+---
+
 ## Installation
 
 ```bash
@@ -61,6 +69,21 @@ await client.collection('laptops').delete().keys(['lp1', 'lp2']).exec();
 
 // DELETE — drop entire collection
 await client.collection('laptops').delete().drop().exec();
+
+// DELETE — bulk delete with a where clause (v2.0.0)
+await client.collection('laptops').delete().where({ in_stock: { $eq: false } }).exec();
+
+// SET — capped collection (v2.0.0)
+await client.collection('recent_events')
+  .set({ evt_001: { type: 'login', user: 'alice' } })
+  .maxSize(5)
+  .exec();
+
+// SET — TTL collection (v2.0.0)
+await client.collection('sessions')
+  .set({ sess_abc: { userId: 'u1', token: 'xyz123' } })
+  .ttl(1800)
+  .exec();
 ```
 
 ---
@@ -90,6 +113,8 @@ combinations are caught at compile time by TypeScript.
 | Method | Description |
 |---|---|
 | `.extends(map)` | Embed snapshots from other collections at insert time |
+| `.maxSize(n)` | *(v2.0.0)* Cap the collection to N documents; oldest are evicted when full |
+| `.ttl(seconds)` | *(v2.0.0)* Set a time-to-live in seconds; documents are removed after expiry |
 | `.build()` | Return the raw JSON payload without sending |
 | `.exec()` | Send and return `{ count, status }` |
 
@@ -109,6 +134,7 @@ Only the fields present in each patch object are updated — all other fields ar
 | Method | Description |
 |---|---|
 | `.keys(key \| key[])` | Delete one or more documents by key |
+| `.where(clause)` | *(v2.0.0)* Bulk-delete all documents matching the filter clause |
 | `.drop()` | Drop the entire collection |
 | `.build()` | Return the raw JSON payload without sending |
 | `.exec()` | Send and return `{ count, status }` |

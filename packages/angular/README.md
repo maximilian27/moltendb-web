@@ -6,6 +6,14 @@ Official Angular integration for [MoltenDb](https://github.com/maximilian27/molt
 
 ---
 
+## What's New in v2.0.0
+
+- **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
+- **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted automatically when the limit is reached.
+- **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically after expiry.
+
+---
+
 ## Demo
 
 See the library in action with a real-world demo application:

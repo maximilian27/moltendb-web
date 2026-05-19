@@ -91,7 +91,7 @@ export type WhereClause = {
 /** A single sort specification. */
 export interface SortSpec {
   field: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
 }
 
 // ── Join ──────────────────────────────────────────────────────────────────────
@@ -128,9 +128,11 @@ export type ExtendsMap = { [alias: string]: string };
  *   - A mock for testing
  */
 export interface MoltenTransport {
-  sendMessage(action: 'get' | 'set' | 'update' | 'delete', payload: Document): Promise<JsonValue>;
+  sendMessage(
+    action: "get" | "set" | "update" | "delete",
+    payload: Document
+  ): Promise<JsonValue>;
 }
-
 
 // ─── GetQuery ─────────────────────────────────────────────────────────────────
 
@@ -171,7 +173,7 @@ export class GetQuery {
    * .keys(['lp1', 'lp3', 'lp5'])
    */
   keys(keys: string | string[]): this {
-    this.payload['keys'] = keys as JsonValue;
+    this.payload["keys"] = keys as JsonValue;
     return this;
   }
 
@@ -191,7 +193,7 @@ export class GetQuery {
    * .where({ $and: [{ in_stock: true }, { price: { $lt: 2000 } }] })
    */
   where(clause: WhereClause): this {
-    this.payload['where'] = clause as unknown as JsonValue;
+    this.payload["where"] = clause as unknown as JsonValue;
     return this;
   }
 
@@ -203,7 +205,7 @@ export class GetQuery {
    * .fields(['brand', 'model', 'specs.cpu.ghz'])
    */
   fields(fields: string[]): this {
-    this.payload['fields'] = fields as JsonValue;
+    this.payload["fields"] = fields as JsonValue;
     return this;
   }
 
@@ -215,7 +217,7 @@ export class GetQuery {
    * .excludedFields(['price', 'memory_id', 'display_id'])
    */
   excludedFields(fields: string[]): this {
-    this.payload['excludedFields'] = fields as JsonValue;
+    this.payload["excludedFields"] = fields as JsonValue;
     return this;
   }
 
@@ -230,7 +232,7 @@ export class GetQuery {
    * ])
    */
   joins(specs: JoinSpec[]): this {
-    this.payload['joins'] = specs.map(({ alias, from, on, fields }) => ({
+    this.payload["joins"] = specs.map(({ alias, from, on, fields }) => ({
       [alias]: fields ? { from, on, fields } : { from, on },
     })) as unknown as JsonValue;
     return this;
@@ -245,7 +247,7 @@ export class GetQuery {
    * .sort([{ field: 'brand', order: 'asc' }, { field: 'price', order: 'desc' }])
    */
   sort(specs: SortSpec[]): this {
-    this.payload['sort'] = specs as unknown as JsonValue;
+    this.payload["sort"] = specs as unknown as JsonValue;
     return this;
   }
 
@@ -256,7 +258,7 @@ export class GetQuery {
    * .count(10)
    */
   count(n: number): this {
-    this.payload['count'] = n;
+    this.payload["count"] = n;
     return this;
   }
 
@@ -267,7 +269,7 @@ export class GetQuery {
    * .offset(20).count(10)  // page 3 of 10
    */
   offset(n: number): this {
-    this.payload['offset'] = n;
+    this.payload["offset"] = n;
     return this;
   }
 
@@ -284,7 +286,7 @@ export class GetQuery {
    * Returns a single document for single-key lookups, or an array for all others.
    */
   exec(): Promise<JsonValue> {
-    return this.transport.sendMessage('get', this.payload);
+    return this.transport.sendMessage("get", this.payload);
   }
 }
 
@@ -293,7 +295,7 @@ export class GetQuery {
 /**
  * Builder for SET (insert / upsert) operations.
  *
- * Allowed fields: collection, data, extends
+ * Allowed fields: collection, data, extends, maxSize, ttl
  *
  * @example
  * await db.collection('laptops')
@@ -302,13 +304,31 @@ export class GetQuery {
  *     lp2: { brand: 'Apple',  model: 'MacBook Pro', price: 3499 },
  *   })
  *   .exec();
+ *
+ * @example
+ * // Capped collection
+ * await db.collection('recent_events')
+ *   .set({ evt_001: { type: 'login', user: 'alice' } })
+ *   .maxSize(5)
+ *   .exec();
+ *
+ * @example
+ * // TTL collection
+ * await db.collection('cache')
+ *   .set({ hot_item: { value: 42 } })
+ *   .ttl(30)
+ *   .exec();
  */
 export class SetQuery {
   private payload: Document;
   private transport: MoltenTransport;
 
   /** @internal */
-  constructor(transport: MoltenTransport, collection: string, data: DataMap | Document[]) {
+  constructor(
+    transport: MoltenTransport,
+    collection: string,
+    data: DataMap | Document[]
+  ) {
     this.transport = transport;
     this.payload = { collection, data: data as unknown as JsonValue };
   }
@@ -325,21 +345,52 @@ export class SetQuery {
   extends(map: ExtendsMap): this {
     // The extends map is applied to every document in data.
     // We store it at the top level; the server resolves it per-document.
-    const data = this.payload['data'];
+    const data = this.payload["data"];
     if (Array.isArray(data)) {
       // Array format — inject extends into each item
-      this.payload['data'] = (data as Document[]).map((doc) => ({
+      this.payload["data"] = (data as Document[]).map((doc) => ({
         ...doc,
         extends: map as unknown as JsonValue,
       })) as unknown as JsonValue;
-    } else if (data && typeof data === 'object') {
+    } else if (data && typeof data === "object") {
       // Object format — inject extends into each document value
       const updated: DataMap = {};
       for (const [key, doc] of Object.entries(data as DataMap)) {
-        updated[key] = { ...(doc as Document), extends: map as unknown as JsonValue };
+        updated[key] = {
+          ...(doc as Document),
+          extends: map as unknown as JsonValue,
+        };
       }
-      this.payload['data'] = updated as unknown as JsonValue;
+      this.payload["data"] = updated as unknown as JsonValue;
     }
+    return this;
+  }
+
+  /**
+   * Cap the collection to a maximum number of documents.
+   * When the limit is reached, the oldest documents are evicted automatically.
+   *
+   * @param size - Maximum number of documents allowed in the collection.
+   *
+   * @example
+   * .maxSize(5)
+   */
+  maxSize(size: number): this {
+    this.payload["maxSize"] = size;
+    return this;
+  }
+
+  /**
+   * Set a time-to-live (in seconds) for documents in the collection.
+   * Documents are automatically removed after the TTL expires.
+   *
+   * @param seconds - TTL duration in seconds.
+   *
+   * @example
+   * .ttl(1800)
+   */
+  ttl(seconds: number): this {
+    this.payload["ttl"] = seconds;
     return this;
   }
 
@@ -350,7 +401,7 @@ export class SetQuery {
 
   /** Execute the insert/upsert and return `{ count, status }`. */
   exec(): Promise<JsonValue> {
-    return this.transport.sendMessage('set', this.payload);
+    return this.transport.sendMessage("set", this.payload);
   }
 }
 
@@ -386,7 +437,7 @@ export class UpdateQuery {
 
   /** Execute the patch and return `{ count, status }`. */
   exec(): Promise<JsonValue> {
-    return this.transport.sendMessage('update', this.payload);
+    return this.transport.sendMessage("update", this.payload);
   }
 }
 
@@ -395,7 +446,7 @@ export class UpdateQuery {
 /**
  * Builder for DELETE operations.
  *
- * Allowed fields: collection, keys, drop
+ * Allowed fields: collection, keys, drop, where
  *
  * @example
  * // Delete a single document
@@ -406,6 +457,9 @@ export class UpdateQuery {
  *
  * // Drop the entire collection
  * await db.collection('laptops').delete().drop().exec();
+ *
+ * // Bulk delete using a where clause
+ * await db.collection('laptops').delete().where({ in_stock: { $eq: false } }).exec();
  */
 export class DeleteQuery {
   private payload: Document;
@@ -425,7 +479,22 @@ export class DeleteQuery {
    * .keys(['lp4', 'lp5'])
    */
   keys(keys: string | string[]): this {
-    this.payload['keys'] = keys as JsonValue;
+    this.payload["keys"] = keys as JsonValue;
+    return this;
+  }
+
+  /**
+   * Filter documents to delete using a WHERE clause.
+   * Supports the same operators as {@link GetQuery.where}.
+   * Cannot be combined with {@link keys} or {@link drop}.
+   *
+   * @example
+   * .where({ in_stock: { $eq: false } })
+   * .where({ price: { $lt: 500 } })
+   * .where({ $or: [{ 'specs.cpu.brand': { $eq: 'AMD' } }, { 'specs.cpu.brand': { $eq: 'Apple' } }] })
+   */
+  where(clause: WhereClause): this {
+    this.payload["where"] = clause as unknown as JsonValue;
     return this;
   }
 
@@ -437,7 +506,7 @@ export class DeleteQuery {
    * .drop()
    */
   drop(): this {
-    this.payload['drop'] = true;
+    this.payload["drop"] = true;
     return this;
   }
 
@@ -448,7 +517,7 @@ export class DeleteQuery {
 
   /** Execute the delete and return `{ count, status }`. */
   exec(): Promise<JsonValue> {
-    return this.transport.sendMessage('delete', this.payload);
+    return this.transport.sendMessage("delete", this.payload);
   }
 }
 
@@ -555,4 +624,3 @@ export class MoltenDbClient {
     return new CollectionHandle(this.transport, name);
   }
 }
-
