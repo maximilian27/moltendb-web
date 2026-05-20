@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { DbEvent } from '@moltendb-web/core';
-import { MoltenDbClient } from '@moltendb-web/query';
-import { useMoltenDbContext } from './MoltenDbContext';
+import { useEffect } from "react";
+import { DbEvent } from "@moltendb-web/core";
+import { MoltenDbClient } from "@moltendb-web/query";
+import { useMoltenDbContext } from "./MoltenDbContext";
 
 /** Hook to access the MoltenDb Query Client directly. Must be used inside <MoltenDbProvider>. */
 export function useMoltenDb(): MoltenDbClient {
@@ -18,7 +18,19 @@ export function useMoltenDbIsLeader(): boolean {
   return useMoltenDbContext().db.isLeader;
 }
 
-/** Returns a function that terminates the MoltenDb worker. Call before clearing OPFS storage. Must be used inside <MoltenDbProvider>. */
+/**
+ * Returns an async function that flushes and closes the OPFS sync handle.
+ * Call this before `useMoltenDbTerminate()` to avoid "No modification allowed" errors.
+ * Must be used inside <MoltenDbProvider>.
+ */
+export function useMoltenDbClearOpfs(): () => Promise<void> {
+  const { db } = useMoltenDbContext();
+  return async () => {
+    await db.clearOpfs();
+  };
+}
+
+/** Returns a function that terminates the MoltenDb worker. Call after clearing OPFS storage. Must be used inside <MoltenDbProvider>. */
 export function useMoltenDbTerminate(): () => void {
   const { db } = useMoltenDbContext();
   return () => db.terminate();
@@ -36,4 +48,3 @@ export function useMoltenDbEvents(listener: (event: DbEvent) => void): void {
     return db.subscribe(listener);
   }, [db, isReady, listener]);
 }
-

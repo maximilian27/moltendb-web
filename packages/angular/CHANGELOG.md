@@ -1,5 +1,29 @@
 # @moltendb-web/angular
 
+## 2.0.0
+
+### Perf ( Core Engine )
+- **`Arc<str>` collection-key interning** — the outer `DashMap` key was changed from `String` to `Arc<str>`. During bulk
+  insert and WAL replay all documents in the same collection share a single pointer instead of allocating a new `String`
+  per document. Saves ~30 B per doc (~30 MB at 1 M docs) and reduces allocator pressure during startup.
+- **MessagePack in-memory storage** — the hot document map was switched from `serde_json::Value` to `Box<[u8]>` (
+  MessagePack bytes). Reduces steady-state RSS for 1 M docs from ~4 GB to ~500 MB (~8× lower). Decoding to `Value`
+  happens lazily on read; write paths encode via `rmp_serde`.
+
+### Major Changes
+
+- **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
+- **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted
+  automatically when the limit is reached.
+- **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically
+  after expiry.
+
+### Patch Changes
+
+- Updated dependencies [1ff51f5]
+  - @moltendb-web/query@2.0.0
+  - @moltendb-web/core@2.0.0
+
 ## 1.8.0
 
 ### Minor Changes
@@ -16,8 +40,11 @@
 
 ### Minor Changes
 
-- 3715d68: @moltendb-web/react v1.6.0 — New React hooks wrapper for MoltenDb (MoltenDbProvider, useMoltenDb, useMoltenDbResource, useMoltenDbReady, useMoltenDbIsLeader, useMoltenDbTerminate, useMoltenDbEvents). Supports React 16.8+. Core and query packages install automatically as dependencies.
-  @moltendb-web/angular — Added moltenDbReady(), moltenDbIsLeader(), moltenDbTerminate(), moltenDbEvents() and re-exported DbEvent type for full API parity with the React package.
+- 3715d68: @moltendb-web/react v1.6.0 — New React hooks wrapper for MoltenDb (MoltenDbProvider, useMoltenDb,
+  useMoltenDbResource, useMoltenDbReady, useMoltenDbIsLeader, useMoltenDbTerminate, useMoltenDbEvents). Supports React
+  16.8+. Core and query packages install automatically as dependencies.
+  @moltendb-web/angular — Added moltenDbReady(), moltenDbIsLeader(), moltenDbTerminate(), moltenDbEvents() and
+  re-exported DbEvent type for full API parity with the React package.
 
 ### Patch Changes
 
@@ -31,12 +58,18 @@
 
 - 5698865: ### Minor Changes
 
-  - **Added `inMemory` option** — run the database entirely in RAM with no OPFS writes. All tabs share a single in-memory store via the leader/follower election; data persists as long as at least one tab is open. When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs. Ideal for ephemeral session caches, testing, and scenarios where persistence is not required.
-  - **Added `maxKeysPerRequest` option** — sets the maximum number of keys allowed per JSON request (default: `1000`). Mirrors the server-side `--max-keys-per-request` flag and the `max_keys_per_request` field in `DbConfig`.
+  - **Added `inMemory` option** — run the database entirely in RAM with no OPFS writes. All tabs share a single
+    in-memory store via the leader/follower election; data persists as long as at least one tab is open. When **any**
+    tab refreshes or closes, the shared RAM store is wiped for all tabs. Ideal for ephemeral session caches, testing,
+    and scenarios where persistence is not required.
+  - **Added `maxKeysPerRequest` option** — sets the maximum number of keys allowed per JSON request (default: `1000`).
+    Mirrors the server-side `--max-keys-per-request` flag and the `max_keys_per_request` field in `DbConfig`.
 
   ### Breaking Changes
 
-  - **Removed `rateLimitRequests` and `rateLimitWindow` options** — these were server-only properties (HTTP rate limiting) that had no effect in the browser context and were incorrectly exposed in the web package. If you were setting these values, you can safely remove them — they were no-ops in the WASM layer.
+  - **Removed `rateLimitRequests` and `rateLimitWindow` options** — these were server-only properties (HTTP rate
+    limiting) that had no effect in the browser context and were incorrectly exposed in the web package. If you were
+    setting these values, you can safely remove them — they were no-ops in the WASM layer.
 
 ### Patch Changes
 
@@ -57,7 +90,8 @@
 
 ### Minor Changes
 
-- c087ed6: `@moltendb-web/core` to expose `hotThreshold`, `encryptionKey`, `writeMode`, `rateLimitRequests`, `rateLimitWindow`, and `maxBodySize` options
+- c087ed6: `@moltendb-web/core` to expose `hotThreshold`, `encryptionKey`, `writeMode`, `rateLimitRequests`,
+  `rateLimitWindow`, and `maxBodySize` options
 
 ### Patch Changes
 
@@ -87,7 +121,8 @@
 
 ### Minor Changes
 
-- 81fd537: The way the rust binary is compiled was changed significantly in the core server repo. Update the naming conventions to match the latest distribution
+- 81fd537: The way the rust binary is compiled was changed significantly in the core server repo. Update the naming
+  conventions to match the latest distribution
 
 ### Patch Changes
 

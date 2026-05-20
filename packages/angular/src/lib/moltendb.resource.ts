@@ -1,6 +1,6 @@
-import { inject, signal, effect, Signal, untracked } from '@angular/core';
-import { MoltenDbClient } from '@moltendb-web/query';
-import { MoltenDbService } from './moltendb.service';
+import { effect, inject, signal, Signal, untracked } from "@angular/core";
+import { MoltenDbClient } from "@moltendb-web/query";
+import { MoltenDbService } from "./moltendb.service";
 
 export interface MoltenDbResource<T> {
   value: Signal<T | undefined>;
@@ -9,9 +9,12 @@ export interface MoltenDbResource<T> {
 }
 
 export function moltenDbResource<T>(
-    collection: string,
-    //  Automatically infer the return type of .collection()
-    queryFn: (collection: ReturnType<MoltenDbClient['collection']>, client: MoltenDbClient) => Promise<T>
+  collection: string,
+  //  Automatically infer the return type of .collection()
+  queryFn: (
+    collection: ReturnType<MoltenDbClient["collection"]>,
+    client: MoltenDbClient
+  ) => Promise<T>
 ): MoltenDbResource<T> {
   const molten = inject(MoltenDbService);
 
@@ -24,11 +27,14 @@ export function moltenDbResource<T>(
 
     try {
       // ⚡ Pre-bind the collection and pass it in!
-      const result = await queryFn(molten.client.collection(collection), molten.client);
+      const result = await queryFn(
+        molten.client.collection(collection),
+        molten.client
+      );
       value.set(result);
       error.set(null);
     } catch (err: any) {
-      if (err.message?.includes('404')) {
+      if (err.message?.includes("404")) {
         value.set([] as any);
         error.set(null);
       } else {
@@ -54,6 +60,6 @@ export function moltenDbResource<T>(
   return {
     value: value.asReadonly(),
     isLoading: isLoading.asReadonly(),
-    error: error.asReadonly()
+    error: error.asReadonly(),
   };
 }

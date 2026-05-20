@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <title>MoltenDb E2E Fixture</title>
 </head>
 <body>
 <div id="status">loading…</div>
 <script type="module">
-  import { MoltenDb } from '../../dist/index.js';
+  import {MoltenDb} from '../../dist/index.js';
 
   const db = new MoltenDb('e2e-db');
 
@@ -40,7 +40,7 @@
   };
 
   // --- UPDATED: Helpers called from Playwright ---
-  window.dbSet    = (col, key, val) => db.set(col, key, val);
+  window.dbSet = (col, key, val) => db.set(col, key, val);
 
   window.dbGet = async (col, key) => {
     const result = await db.get(col, key);
@@ -52,8 +52,8 @@
     return toPlainObject(result);
   };
 
-  window.dbDelete = (col, key)      => db.delete(col, key);
-  window.dbRole   = ()              => (db.isLeader ? 'leader' : 'follower');
+  window.dbDelete = (col, key) => db.delete(col, key);
+  window.dbRole = () => (db.isLeader ? 'leader' : 'follower');
 
   // At the bottom of your script tag
   window.runStressTest = async () => {
@@ -70,7 +70,7 @@
     }
 
     const endTime = performance.now();
-    console.log(`✅ Finished in ${((endTime - startTime)/1000).toFixed(2)}s`);
+    console.log(`✅ Finished in ${((endTime - startTime) / 1000).toFixed(2)}s`);
   };
 </script>
 </body>

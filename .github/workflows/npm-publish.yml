@@ -8,6 +8,9 @@ on:
 jobs:
   publish-packages:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for npm Trusted Publishers (OIDC)
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
@@ -30,8 +33,6 @@ jobs:
           npm run build --workspace=@moltendb-web/react
 
       - name: Publish Packages
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PACKAGES=("core" "query" "angular" "react")
           
@@ -63,10 +64,10 @@ jobs:
               # ⚡ THE FIX: Publish from the correct directory based on package type
               if [ "$PKG" == "angular" ]; then
                 cd dist/angular
-                npm publish --access public --tag latest
+                npm publish --access public --tag latest --provenance
                 cd ../..
               else
-                npm publish --access public --tag latest
+                npm publish --access public --tag latest --provenance
               fi
             fi
           

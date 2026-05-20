@@ -1,9 +1,9 @@
 {
   "name": "@moltendb-web/angular",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "description": "Official Angular Signals wrapper for MoltenDb",
   "type": "module",
-  "author": "Maximilian Both <maximilian.both27@outlook.com>",
+  "author": "Maximilian Both <admin@moltendb.dev>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,15 +18,15 @@
     "@angular/core": ">=17.0.0"
   },
   "dependencies": {
-    "@moltendb-web/core": "^1.8.0",
-    "@moltendb-web/query": "^1.8.0"
+    "@moltendb-web/core": "^2.0.0",
+    "@moltendb-web/query": "^2.0.0"
   },
   "devDependencies": {
     "@angular/compiler": "^17.0.0",
     "@angular/compiler-cli": "^17.0.0",
     "@angular/core": "^17.0.0",
-    "@moltendb-web/core": "^1.8.0",
-    "@moltendb-web/query": "^1.8.0",
+    "@moltendb-web/core": "^2.0.0",
+    "@moltendb-web/query": "^2.0.0",
     "ng-packagr": "^17.0.0",
     "typescript": "^5.2.2",
     "tslib": "^2.3.0"
