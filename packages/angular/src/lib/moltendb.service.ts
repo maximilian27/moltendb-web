@@ -12,7 +12,6 @@ export class MoltenDbService {
   public isReady = signal<boolean>(false);
 
   constructor() {
-    // 🚀 Modern Angular Injection (No constructor decorators needed!)
     const config = inject(MOLTEN_CONFIG);
 
     this.db = new MoltenDb(config.name, config);

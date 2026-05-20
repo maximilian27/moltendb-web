@@ -18,12 +18,6 @@ export function useMoltenDbIsLeader(): boolean {
   return useMoltenDbContext().db.isLeader;
 }
 
-/** Returns a function that terminates the MoltenDb worker. Call before clearing OPFS storage. Must be used inside <MoltenDbProvider>. */
-export function useMoltenDbTerminate(): () => void {
-  const { db } = useMoltenDbContext();
-  return () => db.terminate();
-}
-
 /**
  * Returns an async function that flushes and closes the OPFS sync handle.
  * Call this before `useMoltenDbTerminate()` to avoid "No modification allowed" errors.
@@ -34,6 +28,12 @@ export function useMoltenDbClearOpfs(): () => Promise<void> {
   return async () => {
     await db.clearOpfs();
   };
+}
+
+/** Returns a function that terminates the MoltenDb worker. Call after clearing OPFS storage. Must be used inside <MoltenDbProvider>. */
+export function useMoltenDbTerminate(): () => void {
+  const { db } = useMoltenDbContext();
+  return () => db.terminate();
 }
 
 /**
