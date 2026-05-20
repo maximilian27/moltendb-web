@@ -1,5 +1,11 @@
 # @moltendb-web/query
 
+## 2.0.0
+
+### Major Changes
+
+- 1ff51f5: v2
+
 ## 1.8.0
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # @moltendb-web/angular
 
+## 2.0.0
+
+### Major Changes
+
+- 1ff51f5: v2
+
+### Patch Changes
+
+- Updated dependencies [1ff51f5]
+  - @moltendb-web/query@2.0.0
+  - @moltendb-web/core@2.0.0
+
 ## 1.8.0
 
 ### Minor Changes
