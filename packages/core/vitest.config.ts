@@ -1,14 +1,18 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    environment: 'happy-dom',
+    environment: "happy-dom",
     globals: true,
-    include: ['src/__tests__/**/*.test.ts'],
+    include: ["src/__tests__/**/*.test.ts"],
     coverage: {
-      provider: 'v8',
-      include: ['src/**/*.ts'],
-      exclude: ['src/__tests__/**', 'src/moltendb.d.ts', 'src/moltendb-worker.ts'],
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: [
+        "src/__tests__/**",
+        "src/moltendb.d.ts",
+        "src/moltendb-worker.ts",
+      ],
     },
   },
 });
