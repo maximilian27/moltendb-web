@@ -160,33 +160,32 @@ Only the fields present in each patch object are updated — all other fields ar
 
 ```ts
 // Exact equality (implicit or explicit)
-.
-where({brand: 'Apple'})
-    .where({brand: {$eq: 'Apple'}})
-    .where({brand: {$equals: 'Apple'}}) // alias
+.where({brand: 'Apple'})
+.where({brand: {$eq: 'Apple'}})
+.where({brand: {$equals: 'Apple'}}) // alias
 
-    // Comparison
-    .where({price: {$gt: 1000, $lt: 3000}})
-    .where({price: {$greaterThan: 1000, $lessThan: 3000}}) // aliases
-    .where({'specs.cpu.cores': {$gte: 12}})
+// Comparison
+.where({price: {$gt: 1000, $lt: 3000}})
+.where({price: {$greaterThan: 1000, $lessThan: 3000}}) // aliases
+.where({'specs.cpu.cores': {$gte: 12}})
 
-    // Not equal
-    .where({'specs.cpu.brand': {$ne: 'Intel'}})
-    .where({'specs.cpu.brand': {$notEquals: 'Intel'}}) // alias
+// Not equal
+.where({'specs.cpu.brand': {$ne: 'Intel'}})
+.where({'specs.cpu.brand': {$notEquals: 'Intel'}}) // alias
 
-    // In / not-in list
-    .where({brand: {$in: ['Apple', 'Dell']}})
-    .where({brand: {$oneOf: ['Apple', 'Dell']}}) // alias
-    .where({brand: {$nin: ['Framework']}})
-    .where({brand: {$notIn: ['Framework']}}) // alias
+// In / not-in list
+.where({brand: {$in: ['Apple', 'Dell']}})
+.where({brand: {$oneOf: ['Apple', 'Dell']}}) // alias
+.where({brand: {$nin: ['Framework']}})
+.where({brand: {$notIn: ['Framework']}}) // alias
 
-    // Contains (string substring or array element)
-    .where({model: {$contains: 'Pro'}})
-    .where({model: {$ct: 'Pro'}}) // alias
-    .where({tags: {$contains: 'gaming'}})
+// Contains (string substring or array element)
+.where({model: {$contains: 'Pro'}})
+.where({model: {$ct: 'Pro'}}) // alias
+.where({tags: {$contains: 'gaming'}})
 
-    // Multiple conditions (implicit AND)
-    .where({in_stock: true, 'specs.cpu.brand': 'Intel'})
+// Multiple conditions (implicit AND)
+.where({in_stock: true, 'specs.cpu.brand': 'Intel'})
 ```
 
 ---

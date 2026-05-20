@@ -227,7 +227,7 @@ export class MoltenDb {
    * the exclusive FileSystemSyncAccessHandle) is the one that actually closes
    * the file before the directory is removed.
    *
-   * After this resolves, call `location.reload()` if needed or re-initialize the database.
+   * After this resolves, call the `terminate` method and `location.reload()` if needed or re-initialize the database.
    */
   async clearOpfs(): Promise<void> {
     // 1. Tell Rust to flush, truncate, and CLOSE the FileSystemSyncAccessHandle.
@@ -246,6 +246,7 @@ export class MoltenDb {
     if (this.bc) this.bc.close();
   }
 
+  /** Terminates the MoltenDb worker. Call after clearing OPFS storage. */
   terminate() {
     this.disconnect();
     if (this.worker) {

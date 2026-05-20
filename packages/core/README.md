@@ -383,6 +383,22 @@ Cross-Origin-Embedder-Policy: require-corp
 
 ---
 
+## Management Methods
+
+### `clearOpfs()`
+
+Truncate and close the OPFS file handle, then remove the OPFS directory.
+
+Works from any tab — followers automatically route the `clear_opfs` message through the leader via BroadcastChannel, so the leader worker (which holds the exclusive FileSystemSyncAccessHandle) is the one that actually closes the file before the directory is removed.
+
+After this resolves, call the `terminate` method and `location.reload()` if needed or re-initialize the database.
+
+### `terminate()`
+
+Terminates the MoltenDb worker. Call after clearing OPFS storage.
+
+---
+
 ## Testing
 
 The core package ships with a comprehensive test suite built on **Vitest**:
@@ -443,4 +459,3 @@ Found a bug or have a feature request? Please open an issue on the [GitHub issue
 The MoltenDb Web packages (`@moltendb-web/core` and `@moltendb-web/query`) are licensed under the MIT License.
 
 The **MoltenDb Server** (Rust backend) remains under the Business Source License 1.1 (Free for organizations under $5M revenue, requires a license for managed services).
-
