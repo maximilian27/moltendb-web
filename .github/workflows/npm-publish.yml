@@ -18,8 +18,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
-
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
       # Root Install & Topological Build
       # This prevents the Angular compiler from crashing by ensuring
       # the local dependencies (core & query) are pre-compiled and symlinked.
