@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/query",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Type-safe query builder for MoltenDb — chainable API for get, set, update and delete operations.",
   "author": "Maximilian Both <admin@moltendb.dev>",
   "main": "./dist/index.js",
