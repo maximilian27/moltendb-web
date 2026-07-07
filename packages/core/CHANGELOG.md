@@ -1,8 +1,15 @@
 # @moltendb-web/core
 
+## 2.1.0
+
+### Minor Changes
+
+- 1c519ca: perf: wasm module improvements
+
 ## 2.0.0
 
 ### Perf ( Core Engine )
+
 - **`Arc<str>` collection-key interning** — the outer `DashMap` key was changed from `String` to `Arc<str>`. During bulk
   insert and WAL replay all documents in the same collection share a single pointer instead of allocating a new `String`
   per document. Saves ~30 B per doc (~30 MB at 1 M docs) and reduces allocator pressure during startup.
