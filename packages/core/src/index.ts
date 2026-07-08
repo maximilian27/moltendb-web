@@ -1,5 +1,3 @@
-import { mapToObj } from "./helpers";
-
 export interface MoltenDbOptions {
   /** URL or path to moltendb-worker.js. */
   workerUrl?: string | URL;
@@ -149,11 +147,9 @@ export class MoltenDb {
         : Math.random().toString(36).substring(2, 9);
 
     return new Promise((resolve, reject) => {
-      const successHandler = (res: any) => resolve(mapToObj(res));
-
       // 3. We are now GUARANTEED that isLeader, worker, and bc are accurately set
       if (this.isLeader && this.worker) {
-        this.pendingRequests.set(id, { resolve: successHandler, reject });
+        this.pendingRequests.set(id, { resolve, reject });
         this.worker.postMessage({ id, action, ...payload });
       } else {
         // Follower routing via BroadcastChannel
@@ -169,7 +165,7 @@ export class MoltenDb {
         this.pendingRequests.set(id, {
           resolve: (res: any) => {
             clearTimeout(timer);
-            successHandler(res);
+            resolve(res);
           },
           reject: (e: any) => {
             clearTimeout(timer);

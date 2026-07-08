@@ -39,11 +39,7 @@ self.onmessage = async (e: MessageEvent) => {
       await initPromise;
       self.postMessage({ id, result: { status: "ok" } });
     } catch (error) {
-      // FIX: Handle Map-based errors from Rust correctly
-      const errorMsg =
-        error instanceof Map
-          ? JSON.stringify(Object.fromEntries(error))
-          : String(error);
+      const errorMsg = String(error);
       self.postMessage({ id, error: errorMsg });
     }
     return;
@@ -57,11 +53,7 @@ self.onmessage = async (e: MessageEvent) => {
     const result = currentDb.handle_message({ action, ...payload });
     self.postMessage({ id, result });
   } catch (error) {
-    // FIX: Handle Map-based errors here too
-    const errorMsg =
-      error instanceof Map
-        ? JSON.stringify(Object.fromEntries(error))
-        : String(error);
+    const errorMsg = String(error);
     self.postMessage({ id, error: errorMsg });
   }
 };
