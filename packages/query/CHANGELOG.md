@@ -1,5 +1,11 @@
 # @moltendb-web/query
 
+## 2.2.0
+
+### Minor Changes
+
+- d848097: perf: remove object serialization overhead
+
 ## 2.1.0
 
 ### Minor Changes
