@@ -1,5 +1,17 @@
 # @moltendb-web/react
 
+## 2.2.0
+
+### Minor Changes
+
+- d848097: perf: remove object serialization overhead
+
+### Patch Changes
+
+- Updated dependencies [d848097]
+  - @moltendb-web/core@2.2.0
+  - @moltendb-web/query@2.2.0
+
 ## 2.1.0
 
 ### Minor Changes
