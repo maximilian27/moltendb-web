@@ -18,8 +18,9 @@ export interface MoltenDbOptions {
    * Run entirely in RAM — no OPFS writes.
    *
    * All tabs share a single in-memory store via the leader/follower election.
-   * Data persists as long as at least one tab is open.
-   * When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs.
+   * Data is wiped when **any** tab refreshes or closes — a `clear_all` signal
+   * is broadcast on `beforeunload` so the leader can wipe the Rust store and
+   * notify all followers to reject their in-flight requests.
    *
    * Default: false.
    */
@@ -82,8 +83,42 @@ export class MoltenDb {
     // 1. If initialization has already started or finished, return the existing promise
     if (this.initPromise) return this.initPromise;
 
-    // 2. When running in-memory, any tab refresh should wipe the shared RAM store.
-    //    Broadcast a clear_all signal on beforeunload so the leader can wipe the Rust DashMap.
+    this.initPromise = this._init();
+    return this.initPromise;
+  }
+
+  private async _init(): Promise<void> {
+    // Guard: Web Locks API is required. Not available in SSR, some test runners, or very old browsers.
+    if (typeof navigator === "undefined" || !navigator.locks) {
+      throw new Error(
+        "[MoltenDb] navigator.locks is not available in this environment. " +
+          "MoltenDb requires a modern browser with Web Locks API support (Chrome 69+, Firefox 96+, Safari 15.4+)."
+      );
+    }
+
+    // Check OPFS availability upfront, before starting leader election or any workers.
+    // This is done here on the main thread so the decision is made once and shared across
+    // all code paths (leader, follower, and future promotions).
+    if (!this.options.inMemory) {
+      try {
+        await navigator.storage.getDirectory();
+      } catch {
+        console.warn(
+          "[MoltenDb] Origin Private File System (OPFS) is not available in this browser context " +
+            "(e.g. private/incognito window, unsupported browser, or cross-origin iframe). " +
+            "Falling back to in-memory mode — data will not be persisted across sessions. " +
+            "To suppress this warning, set { inMemory: true } explicitly."
+        );
+        this.options.inMemory = true;
+        this.isInMemoryFallback = true;
+      }
+    }
+
+    this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
+
+    // When running in-memory, any tab refresh or close should wipe the shared
+    // RAM store. Broadcast a clear_all signal on beforeunload so the leader
+    // can wipe the Rust DashMap and notify followers.
     if (this.options.inMemory) {
       window.addEventListener("beforeunload", () => {
         try {
@@ -92,21 +127,7 @@ export class MoltenDb {
       });
     }
 
-    // 3. Otherwise, start the initialization and store the promise
-    this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
-      // Guard: Web Locks API is required. Not available in SSR, some test runners, or very old browsers.
-      if (typeof navigator === "undefined" || !navigator.locks) {
-        rejectInit(
-          new Error(
-            "[MoltenDb] navigator.locks is not available in this environment. " +
-              "MoltenDb requires a modern browser with Web Locks API support (Chrome 69+, Firefox 96+, Safari 15.4+)."
-          )
-        );
-        return;
-      }
-
-      this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
-
+    await new Promise<void>((resolveInit, rejectInit) => {
       navigator.locks.request(
         `moltendb_lock_${this.dbName}`,
         { ifAvailable: true },
@@ -136,8 +157,6 @@ export class MoltenDb {
         }
       );
     });
-
-    return this.initPromise;
   }
   // ───────────────────────────────────────────────────────────────────────────
 
@@ -282,31 +301,6 @@ export class MoltenDb {
   }
 
   private async startAsLeader() {
-    // Guard: OPFS is required unless running in-memory
-    if (!this.options.inMemory) {
-      try {
-        await navigator.storage.getDirectory();
-      } catch {
-        console.warn(
-          "[MoltenDb] Origin Private File System (OPFS) is not available in this browser context " +
-            "(e.g. private/incognito window, unsupported browser, or cross-origin iframe). " +
-            "Falling back to in-memory mode — data will not be persisted across sessions. " +
-            "To suppress this warning, set { inMemory: true } explicitly."
-        );
-        this.options.inMemory = true;
-        this.isInMemoryFallback = true;
-        // Notify all follower tabs so their isInMemoryFallback / inMemory properties
-        // stay accurate (best-effort; followers may not yet be listening).
-        try {
-          this.bc.postMessage({
-            type: "mode_changed",
-            inMemory: true,
-            isInMemoryFallback: true,
-          });
-        } catch {}
-      }
-    }
-
     this._isLeader = true;
     if (this.worker) this.worker.terminate();
 
@@ -419,12 +413,6 @@ export class MoltenDb {
           );
           this.pendingRequests.delete(id);
         }
-        return;
-      }
-      // Leader fell back to in-memory due to OPFS being unavailable — sync state here.
-      if (data.type === "mode_changed") {
-        this.options.inMemory = data.inMemory;
-        this.isInMemoryFallback = data.isInMemoryFallback;
         return;
       }
       if (data.type === "response") {
