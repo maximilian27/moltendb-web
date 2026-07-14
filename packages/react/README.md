@@ -257,17 +257,21 @@ Subscribes to real-time mutation events from the database. The `listener` is cal
 document is created, updated, deleted, or a collection is dropped. The subscription is **automatically cleaned up** when
 the component unmounts — no manual unsubscription needed. Must be used inside `<MoltenDbProvider>`.
 
+The listener does **not** need to be wrapped in `useCallback`. The hook stores it in a ref internally, so the
+subscription is never torn down and re-created just because a new function reference is passed on a re-render.
+
 ```tsx
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useMoltenDbEvents } from '@moltendb-web/react';
 import type { DbEvent } from '@moltendb-web/react';
 
 function LiveFeed() {
   const [events, setEvents] = useState<DbEvent[]>([]);
 
-  useMoltenDbEvents(useCallback((evt: DbEvent) => {
+  // No useCallback needed — the hook handles referential stability internally.
+  useMoltenDbEvents((evt: DbEvent) => {
     setEvents((prev) => [evt, ...prev].slice(0, 50));
-  }, []));
+  });
 
   return (
     <ul>
@@ -277,10 +281,6 @@ function LiveFeed() {
     </ul>
   );
 }
-```
-
-> **Tip:** Wrap the listener in `useCallback` with an empty dependency array to keep it stable and avoid re-subscribing
-> on every render.
 
 ## API Reference
 
@@ -306,7 +306,7 @@ function LiveFeed() {
 | Option              | Type                | Default      | Description                                                                                                                                           |
 |---------------------|---------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`              | `string`            | **required** | Database name (used as the OPFS directory name)                                                                                                       |
-| `inMemory`          | `boolean`           | `false`      | Run entirely in RAM — no OPFS writes. Data persists as long as at least one tab is open; any tab refresh or close wipes the shared store for all tabs |
+| `inMemory`          | `boolean`           | `false`      | Run entirely in RAM — no OPFS writes. All tabs share a single in-memory store. Data survives tab refreshes; the RAM store is only wiped when **all** tabs are closed. |
 | `encryptionKey`     | `string`            | `undefined`  | Password for at-rest encryption. If omitted, data is stored as plain JSON                                                                             |
 | `writeMode`         | `'async' \| 'sync'` | `'async'`    | Storage write mode: `'async'` for high throughput or `'sync'` for durable writes                                                                      |
 | `maxBodySize`       | `number`            | `undefined`  | Maximum request body size in bytes                                                                                                                    |
