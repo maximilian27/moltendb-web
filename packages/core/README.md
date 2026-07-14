@@ -363,6 +363,8 @@ if (db.isInMemoryFallback) {
 }
 ```
 
+`isInMemoryFallback` is reliable on **all tabs**: the leader tab broadcasts a `mode_changed` signal when it detects the OPFS fallback, so every open follower tab updates its own `isInMemoryFallback` and `inMemory` flags automatically.
+
 This ensures your application stays functional in private windows, older browsers, and embedded webviews — while the developer is always informed via the console warning.
 
 ### Real-Time Events (Pub/Sub)

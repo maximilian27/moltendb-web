@@ -43,7 +43,9 @@ export class MoltenDb {
   /** True when OPFS was unavailable and MoltenDb automatically fell back to in-memory mode. */
   public isInMemoryFallback: boolean = false;
   // Multi-tab Sync State
-  isLeader: boolean = false;
+  private _isLeader: boolean = false;
+  /** Whether this tab is the current leader. Read-only to callers. */
+  get isLeader(): boolean { return this._isLeader; }
   /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
   public onEvent?: (event: DbEvent) => void;
   private initPromise: Promise<void> | null = null;
@@ -81,6 +83,17 @@ export class MoltenDb {
 
     // 2. Start the initialization and store the promise
     this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
+      // Guard: Web Locks API is required. Not available in SSR, some test runners, or very old browsers.
+      if (typeof navigator === "undefined" || !navigator.locks) {
+        rejectInit(
+          new Error(
+            "[MoltenDb] navigator.locks is not available in this environment. " +
+              "MoltenDb requires a modern browser with Web Locks API support (Chrome 69+, Firefox 96+, Safari 15.4+)."
+          )
+        );
+        return;
+      }
+
       this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
 
       navigator.locks.request(
@@ -243,7 +256,7 @@ export class MoltenDb {
       this.worker = null;
     }
     this.initPromise = null;
-    this.isLeader = false;
+    this._isLeader = false;
   }
 
   private dispatchEvent(event: DbEvent) {
@@ -271,10 +284,15 @@ export class MoltenDb {
         );
         this.options.inMemory = true;
         this.isInMemoryFallback = true;
+        // Notify all follower tabs so their isInMemoryFallback / inMemory properties
+        // stay accurate (best-effort; followers may not yet be listening).
+        try {
+          this.bc.postMessage({ type: "mode_changed", inMemory: true, isInMemoryFallback: true });
+        } catch {}
       }
     }
 
-    this.isLeader = true;
+    this._isLeader = true;
     if (this.worker) this.worker.terminate();
 
     const url =
@@ -326,6 +344,10 @@ export class MoltenDb {
         });
         return;
       }
+      // Sync in-memory fallback state to all follower tabs.
+      if (msg.type === "mode_changed") {
+        return; // Leader sent this; it doesn't need to handle its own broadcast.
+      }
       if (msg.type === "query" && msg.action) {
         try {
           const result = await this.sendMessage(msg.action, msg.payload);
@@ -342,7 +364,7 @@ export class MoltenDb {
   }
 
   private startAsFollower() {
-    this.isLeader = false;
+    this._isLeader = false;
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
@@ -364,6 +386,12 @@ export class MoltenDb {
       }
       if (data.type === "event") {
         this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
+        return;
+      }
+      // Leader fell back to in-memory due to OPFS being unavailable — sync state here.
+      if (data.type === "mode_changed") {
+        this.options.inMemory = data.inMemory;
+        this.isInMemoryFallback = data.isInMemoryFallback;
         return;
       }
       if (data.type === "response") {
