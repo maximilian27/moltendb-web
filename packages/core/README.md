@@ -333,9 +333,7 @@ Pass `{ inMemory: true }` to run MoltenDb entirely in RAM with no OPFS writes. A
 
 **Data lifecycle:**
 - A tab **refresh** does **not** wipe the data — the in-memory store survives for as long as at least one tab is open.
-- Data is only wiped when **all** tabs are closed simultaneously.
-
-This is implemented with the [Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API): every tab holds a shared lock while alive. When a tab closes, it tries to acquire an exclusive lock with `ifAvailable: true`. This succeeds only when no other tab holds the shared lock (i.e. it is the last tab), at which point a `clear_all` signal is broadcast to wipe the Rust store.
+- Data is wiped automatically when the **last tab closes**: the browser terminates the Web Worker and reclaims its RAM. No explicit cleanup signal is needed.
 
 ```ts
 const db = new MoltenDb('my-app', { inMemory: true });

@@ -18,9 +18,9 @@ export interface MoltenDbOptions {
    * Run entirely in RAM — no OPFS writes.
    *
    * All tabs share a single in-memory store via the leader/follower election.
-   * Data persists as long as at least one tab is open.
-   * The shared RAM store is wiped only when **all** tabs are closed — a single tab
-   * refreshing will not wipe the data.
+   * Data persists as long as at least one tab is open — the store is wiped
+   * automatically when the last tab closes (the Worker is terminated and the
+   * browser reclaims the RAM). A single tab refreshing will not lose data.
    *
    * Default: false.
    */
@@ -38,7 +38,7 @@ export interface DbEvent {
 export class MoltenDb {
   readonly dbName: string;
   readonly workerUrl?: string | URL;
-  readonly options: MoltenDbOptions;
+  public options: MoltenDbOptions;
   worker: Worker | null = null;
   /** True when OPFS was unavailable and MoltenDb automatically fell back to in-memory mode. */
   public isInMemoryFallback: boolean = false;
@@ -75,42 +75,6 @@ export class MoltenDb {
     this.eventListeners.delete(listener);
   }
 
-  /**
-   * Set up the Web Locks-based cleanup for in-memory mode.
-   * Each tab holds a shared lock while alive. On beforeunload, the tab releases
-   * its lock and tries to acquire an exclusive lock — which only succeeds when it
-   * is the last tab. Only then is a clear_all signal broadcast to wipe the store.
-   *
-   * Called either when inMemory is explicitly set (at init time) or after the
-   * OPFS-unavailable fallback sets inMemory = true inside startAsLeader.
-   */
-  private setupInMemoryTabLock(): void {
-    navigator.locks.request(
-      `moltendb_tabs_${this.dbName}`,
-      { mode: "shared" },
-      () =>
-        new Promise<void>((resolveTab) => {
-          window.addEventListener("beforeunload", () => {
-            resolveTab();
-            // After this tab releases the shared lock, try to acquire an exclusive lock.
-            // This succeeds only when no other tab holds the shared lock (i.e. last tab).
-            navigator.locks.request(
-              `moltendb_tabs_${this.dbName}`,
-              { mode: "exclusive", ifAvailable: true },
-              (exclusiveLock) => {
-                if (exclusiveLock) {
-                  try {
-                    this.bc?.postMessage({ type: "clear_all" });
-                  } catch {}
-                }
-                return Promise.resolve();
-              }
-            );
-          });
-        })
-    );
-  }
-
   init(): Promise<void> {
     // 1. If initialization has already started or finished, return the existing promise
     if (this.initPromise) return this.initPromise;
@@ -126,11 +90,6 @@ export class MoltenDb {
           if (lock) {
             try {
               await this.startAsLeader();
-              // Set up in-memory tab-lock cleanup after startAsLeader, because an OPFS
-              // fallback inside startAsLeader may have set inMemory = true at that point.
-              if (this.options.inMemory) {
-                this.setupInMemoryTabLock();
-              }
               resolveInit();
             } catch (err) {
               rejectInit(err as Error);
@@ -138,11 +97,6 @@ export class MoltenDb {
             return new Promise(() => {}); // Hold lock
           } else {
             this.startAsFollower();
-            // For followers, inMemory was already set by the user option (no fallback needed
-            // here — the leader is the one that checks OPFS and may set the fallback flag).
-            if (this.options.inMemory) {
-              this.setupInMemoryTabLock();
-            }
             resolveInit();
 
             // Wait in the background to become leader if the current leader dies
@@ -372,18 +326,6 @@ export class MoltenDb {
         });
         return;
       }
-      // Any tab unloading in in-memory mode broadcasts this — wipe the shared RAM store.
-      if (msg.type === "clear_all") {
-        try {
-          await this.sendMessage("clear", {});
-          this.bc.postMessage({ type: "cleared" });
-          console.log("[MoltenDb] In-memory store wiped (tab unloaded).");
-        } catch (err) {
-          console.warn("[MoltenDb] Failed to clear in-memory store:", err);
-        }
-        return;
-      }
-
       if (msg.type === "query" && msg.action) {
         try {
           const result = await this.sendMessage(msg.action, msg.payload);
@@ -408,7 +350,7 @@ export class MoltenDb {
 
     this.bc.onmessage = (e) => {
       const data = e.data;
-      // --- THE KILKILL SWITCH ---
+      // --- THE KILL SWITCH ---
       if (data.type === "kill_signal") {
         this.terminate(); // Kills zombie worker instantly
         this.dispatchEvent({
@@ -422,17 +364,6 @@ export class MoltenDb {
       }
       if (data.type === "event") {
         this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
-        return;
-      }
-      // In-memory wipe notification from leader — reject all in-flight requests.
-      if (data.type === "cleared") {
-        console.log("[MoltenDb] In-memory store was wiped by another tab.");
-        for (const [id, req] of this.pendingRequests) {
-          req.reject(
-            new Error("[MoltenDb] In-memory store was cleared by a tab reload.")
-          );
-          this.pendingRequests.delete(id);
-        }
         return;
       }
       if (data.type === "response") {
