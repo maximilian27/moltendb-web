@@ -18,9 +18,8 @@ export interface MoltenDbOptions {
    * Run entirely in RAM — no OPFS writes.
    *
    * All tabs share a single in-memory store via the leader/follower election.
-   * Data persists as long as at least one tab is open — the store is wiped
-   * automatically when the last tab closes (the Worker is terminated and the
-   * browser reclaims the RAM). A single tab refreshing will not lose data.
+   * Data persists as long as at least one tab is open.
+   * When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs.
    *
    * Default: false.
    */
@@ -45,7 +44,9 @@ export class MoltenDb {
   // Multi-tab Sync State
   private _isLeader: boolean = false;
   /** Whether this tab is the current leader. Read-only to callers. */
-  get isLeader(): boolean { return this._isLeader; }
+  get isLeader(): boolean {
+    return this._isLeader;
+  }
   /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
   public onEvent?: (event: DbEvent) => void;
   private initPromise: Promise<void> | null = null;
@@ -81,7 +82,17 @@ export class MoltenDb {
     // 1. If initialization has already started or finished, return the existing promise
     if (this.initPromise) return this.initPromise;
 
-    // 2. Start the initialization and store the promise
+    // 2. When running in-memory, any tab refresh should wipe the shared RAM store.
+    //    Broadcast a clear_all signal on beforeunload so the leader can wipe the Rust DashMap.
+    if (this.options.inMemory) {
+      window.addEventListener("beforeunload", () => {
+        try {
+          this.bc?.postMessage({ type: "clear_all" });
+        } catch {}
+      });
+    }
+
+    // 3. Otherwise, start the initialization and store the promise
     this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
       // Guard: Web Locks API is required. Not available in SSR, some test runners, or very old browsers.
       if (typeof navigator === "undefined" || !navigator.locks) {
@@ -287,7 +298,11 @@ export class MoltenDb {
         // Notify all follower tabs so their isInMemoryFallback / inMemory properties
         // stay accurate (best-effort; followers may not yet be listening).
         try {
-          this.bc.postMessage({ type: "mode_changed", inMemory: true, isInMemoryFallback: true });
+          this.bc.postMessage({
+            type: "mode_changed",
+            inMemory: true,
+            isInMemoryFallback: true,
+          });
         } catch {}
       }
     }
@@ -344,9 +359,16 @@ export class MoltenDb {
         });
         return;
       }
-      // Sync in-memory fallback state to all follower tabs.
-      if (msg.type === "mode_changed") {
-        return; // Leader sent this; it doesn't need to handle its own broadcast.
+      // Any tab unloading in in-memory mode broadcasts this — wipe the shared RAM store.
+      if (msg.type === "clear_all") {
+        try {
+          await this.sendMessage("clear", {});
+          this.bc.postMessage({ type: "cleared" });
+          console.log("[MoltenDb] In-memory store wiped (tab unloaded).");
+        } catch (err) {
+          console.warn("[MoltenDb] Failed to clear in-memory store:", err);
+        }
+        return;
       }
       if (msg.type === "query" && msg.action) {
         try {
@@ -386,6 +408,17 @@ export class MoltenDb {
       }
       if (data.type === "event") {
         this.dispatchEvent(data); // ⬅️ Trigger new dispatcher
+        return;
+      }
+      // In-memory wipe notification from leader — reject all in-flight requests.
+      if (data.type === "cleared") {
+        console.log("[MoltenDb] In-memory store was wiped by another tab.");
+        for (const [id, req] of this.pendingRequests) {
+          req.reject(
+            new Error("[MoltenDb] In-memory store was cleared by a tab reload.")
+          );
+          this.pendingRequests.delete(id);
+        }
         return;
       }
       // Leader fell back to in-memory due to OPFS being unavailable — sync state here.

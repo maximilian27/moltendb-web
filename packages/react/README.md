@@ -306,7 +306,7 @@ function LiveFeed() {
 | Option              | Type                | Default      | Description                                                                                                                                           |
 |---------------------|---------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `name`              | `string`            | **required** | Database name (used as the OPFS directory name)                                                                                                       |
-| `inMemory`          | `boolean`           | `false`      | Run entirely in RAM — no OPFS writes. All tabs share a single in-memory store. Data survives tab refreshes; the RAM store is only wiped when **all** tabs are closed. |
+| `inMemory`          | `boolean`           | `false`      | Run entirely in RAM — no OPFS writes. Data persists as long as at least one tab is open; any tab refresh or close wipes the shared store for all tabs |
 | `encryptionKey`     | `string`            | `undefined`  | Password for at-rest encryption. If omitted, data is stored as plain JSON                                                                             |
 | `writeMode`         | `'async' \| 'sync'` | `'async'`    | Storage write mode: `'async'` for high throughput or `'sync'` for durable writes                                                                      |
 | `maxBodySize`       | `number`            | `undefined`  | Maximum request body size in bytes                                                                                                                    |
