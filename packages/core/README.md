@@ -302,7 +302,7 @@ await db.init();
 | `workerUrl`         | `string \| URL`     | `undefined` | Custom path to the Web Worker script.                                                                                                                                                                                                                            |
 | `maxBodySize`       | `number`            | `10485760`  | **Payload Limit:** Max body size in bytes. Prevents memory spikes from large messages.                                                                                                                                                                           |
 | `maxKeysPerRequest` | `number`            | `1000`      | **Batch Limit:** Maximum number of keys allowed per JSON request.                                                                                                                                                                                                |
-| `inMemory`          | `boolean`           | `false`     | **Ephemeral Mode:** Run entirely in RAM — no OPFS writes, no WAL. All data is lost when **any** tab refreshes or closes. Ideal for CI environments and ephemeral caches.                                                                                         |
+| `inMemory`          | `boolean`           | `false`     | **In-Memory Mode:** Run entirely in RAM — no OPFS writes, no WAL. All tabs share a single in-memory store. Data survives tab refreshes; the RAM store is only wiped when **all** tabs are closed. Ideal for CI environments, private-window contexts, and ephemeral caches. |
 
 ---
 
@@ -326,6 +326,46 @@ Tab 1 (Leader) ──owns──▶ Web Worker ──▶ WASM Engine ──▶ OP
      └── BroadcastChannel ──▶ Tab 2 (Follower)
                           ──▶ Tab 3 (Follower)
 ```
+
+### In-Memory Mode
+
+Pass `{ inMemory: true }` to run MoltenDb entirely in RAM with no OPFS writes. All tabs still share the same in-memory store via the leader/follower election, and real-time pub/sub events work exactly as they do in persistent mode.
+
+**Data lifecycle:**
+- A tab **refresh** does **not** wipe the data — the in-memory store survives for as long as at least one tab is open.
+- Data is only wiped when **all** tabs are closed simultaneously.
+
+This is implemented with the [Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API): every tab holds a shared lock while alive. When a tab closes, it tries to acquire an exclusive lock with `ifAvailable: true`. This succeeds only when no other tab holds the shared lock (i.e. it is the last tab), at which point a `clear_all` signal is broadcast to wipe the Rust store.
+
+```ts
+const db = new MoltenDb('my-app', { inMemory: true });
+await db.init();
+```
+
+### Automatic OPFS Fallback
+
+If OPFS is unavailable (private/incognito browsing, unsupported browser, cross-origin iframe) and `inMemory` was **not** set explicitly, MoltenDb will automatically fall back to in-memory mode instead of throwing an error. A `console.warn` is emitted so you are aware of the degradation:
+
+```
+[MoltenDb] Origin Private File System (OPFS) is not available in this browser context
+(e.g. private/incognito window, unsupported browser, or cross-origin iframe).
+Falling back to in-memory mode — data will not be persisted across sessions.
+To suppress this warning, set { inMemory: true } explicitly.
+```
+
+You can detect the fallback programmatically via the `isInMemoryFallback` property:
+
+```ts
+const db = new MoltenDb('my-app');
+await db.init();
+
+if (db.isInMemoryFallback) {
+  // OPFS was unavailable; show a banner to inform the user
+  showBanner('Data will not be saved — storage is unavailable in this context.');
+}
+```
+
+This ensures your application stays functional in private windows, older browsers, and embedded webviews — while the developer is always informed via the console warning.
 
 ### Real-Time Events (Pub/Sub)
 

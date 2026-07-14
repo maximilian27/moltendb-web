@@ -19,7 +19,8 @@ export interface MoltenDbOptions {
    *
    * All tabs share a single in-memory store via the leader/follower election.
    * Data persists as long as at least one tab is open.
-   * When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs.
+   * The shared RAM store is wiped only when **all** tabs are closed — a single tab
+   * refreshing will not wipe the data.
    *
    * Default: false.
    */
@@ -39,6 +40,8 @@ export class MoltenDb {
   readonly workerUrl?: string | URL;
   readonly options: MoltenDbOptions;
   worker: Worker | null = null;
+  /** True when OPFS was unavailable and MoltenDb automatically fell back to in-memory mode. */
+  public isInMemoryFallback: boolean = false;
   // Multi-tab Sync State
   isLeader: boolean = false;
   /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
@@ -72,21 +75,47 @@ export class MoltenDb {
     this.eventListeners.delete(listener);
   }
 
+  /**
+   * Set up the Web Locks-based cleanup for in-memory mode.
+   * Each tab holds a shared lock while alive. On beforeunload, the tab releases
+   * its lock and tries to acquire an exclusive lock — which only succeeds when it
+   * is the last tab. Only then is a clear_all signal broadcast to wipe the store.
+   *
+   * Called either when inMemory is explicitly set (at init time) or after the
+   * OPFS-unavailable fallback sets inMemory = true inside startAsLeader.
+   */
+  private setupInMemoryTabLock(): void {
+    navigator.locks.request(
+      `moltendb_tabs_${this.dbName}`,
+      { mode: "shared" },
+      () =>
+        new Promise<void>((resolveTab) => {
+          window.addEventListener("beforeunload", () => {
+            resolveTab();
+            // After this tab releases the shared lock, try to acquire an exclusive lock.
+            // This succeeds only when no other tab holds the shared lock (i.e. last tab).
+            navigator.locks.request(
+              `moltendb_tabs_${this.dbName}`,
+              { mode: "exclusive", ifAvailable: true },
+              (exclusiveLock) => {
+                if (exclusiveLock) {
+                  try {
+                    this.bc?.postMessage({ type: "clear_all" });
+                  } catch {}
+                }
+                return Promise.resolve();
+              }
+            );
+          });
+        })
+    );
+  }
+
   init(): Promise<void> {
     // 1. If initialization has already started or finished, return the existing promise
     if (this.initPromise) return this.initPromise;
 
-    // 2. When running in-memory, any tab refresh should wipe the shared RAM store.
-    //    Broadcast a clear_all signal on beforeunload so the leader can wipe the Rust DashMap.
-    if (this.options.inMemory) {
-      window.addEventListener("beforeunload", () => {
-        try {
-          this.bc?.postMessage({ type: "clear_all" });
-        } catch {}
-      });
-    }
-
-    // 3. Otherwise, start the initialization and store the promise
+    // 2. Start the initialization and store the promise
     this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
       this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
 
@@ -97,6 +126,11 @@ export class MoltenDb {
           if (lock) {
             try {
               await this.startAsLeader();
+              // Set up in-memory tab-lock cleanup after startAsLeader, because an OPFS
+              // fallback inside startAsLeader may have set inMemory = true at that point.
+              if (this.options.inMemory) {
+                this.setupInMemoryTabLock();
+              }
               resolveInit();
             } catch (err) {
               rejectInit(err as Error);
@@ -104,6 +138,11 @@ export class MoltenDb {
             return new Promise(() => {}); // Hold lock
           } else {
             this.startAsFollower();
+            // For followers, inMemory was already set by the user option (no fallback needed
+            // here — the leader is the one that checks OPFS and may set the fallback flag).
+            if (this.options.inMemory) {
+              this.setupInMemoryTabLock();
+            }
             resolveInit();
 
             // Wait in the background to become leader if the current leader dies
@@ -265,15 +304,19 @@ export class MoltenDb {
   }
 
   private async startAsLeader() {
-    // Guard: OPFS is required
+    // Guard: OPFS is required unless running in-memory
     if (!this.options.inMemory) {
       try {
         await navigator.storage.getDirectory();
       } catch {
-        throw new Error(
-          "[MoltenDb] Origin Private File System (OPFS) is not available in this browser context. " +
-            "Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+)."
+        console.warn(
+          "[MoltenDb] Origin Private File System (OPFS) is not available in this browser context " +
+            "(e.g. private/incognito window, unsupported browser, or cross-origin iframe). " +
+            "Falling back to in-memory mode — data will not be persisted across sessions. " +
+            "To suppress this warning, set { inMemory: true } explicitly."
         );
+        this.options.inMemory = true;
+        this.isInMemoryFallback = true;
       }
     }
 
