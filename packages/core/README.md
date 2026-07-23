@@ -47,11 +47,14 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 
 ---
 
-## What's New in v2.0.0
+## What's New in v2
 
 ### Query Builder
 
 - **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys (see [`@moltendb-web/query`](../query/README.md)).
+- **Delete `.order()` + count-only prune** *(query v2.3.0)* — order bulk-delete matches by `_seq` before `.count()` is
+    applied (`'asc'` default = oldest first, `'desc'` = newest first), and prune the oldest/newest `n` documents with a
+    bare `.delete().count(n)` (no `.where()`). See [`@moltendb-web/query`](../query/README.md).
 - **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted automatically when the limit is reached.
 - **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically after expiry.
 

@@ -14,9 +14,12 @@ Official React hooks wrapper for [MoltenDb](https://github.com/maximilian27/molt
 The package uses only stable React hooks (`useState`, `useEffect`, `useRef`, `useContext`, `createContext`) available
 since React 16.8. No concurrent features or React 18+ APIs are used in the library itself.
 
-## What's New in v2.0.0
+## What's New in v2
 
 - **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
+- **Delete `.order()` + count-only prune** *(query v2.3.0)* — order bulk-delete matches by `_seq` before `.count()` is
+  applied (`'asc'` default = oldest first, `'desc'` = newest first), and prune the oldest/newest `n` documents with a
+  bare `.delete().count(n)` (no `.where()`). See [`@moltendb-web/query`](../query/README.md).
 - **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted
   automatically when the limit is reached.
 - **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically
