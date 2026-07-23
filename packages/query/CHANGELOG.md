@@ -1,5 +1,11 @@
 # @moltendb-web/query
 
+## 2.3.0
+
+### Minor Changes
+
+- a9ea23a: bulk deletes without filer and fix wasm ttl issue
+
 ## 2.2.0
 
 ### Minor Changes

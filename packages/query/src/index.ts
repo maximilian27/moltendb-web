@@ -9,7 +9,7 @@
 //                   joins, sort, count, offset
 //   SET_ALLOWED:    collection, data, extends
 //   UPDATE_ALLOWED: collection, data
-//   DELETE_ALLOWED: collection, keys, drop
+//   DELETE_ALLOWED: collection, keys, where, drop, count, offset, order
 //
 // Usage (vanilla JS or TypeScript):
 //
@@ -38,6 +38,17 @@
 //   await db.collection('laptops').delete().keys('lp6').exec();
 //   await db.collection('laptops').delete().keys(['lp4', 'lp5']).exec();
 //   await db.collection('laptops').delete().drop().exec();
+//
+//   // DELETE — bulk delete by filter, ordered & capped
+//   await db.collection('laptops')
+//     .delete()
+//     .where({ in_stock: { $eq: false } })
+//     .order('desc')   // newest first (default is 'asc' = oldest first)
+//     .count(5)
+//     .exec();
+//
+//   // DELETE — count-only prune (no where): remove the 20 oldest documents
+//   await db.collection('laptops').delete().count(20).exec();
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -446,7 +457,7 @@ export class UpdateQuery {
 /**
  * Builder for DELETE operations.
  *
- * Allowed fields: collection, keys, drop, where, count, offset
+ * Allowed fields: collection, keys, where, drop, count, offset, order
  *
  * @example
  * // Delete a single document
@@ -458,8 +469,11 @@ export class UpdateQuery {
  * // Drop the entire collection
  * await db.collection('laptops').delete().drop().exec();
  *
- * // Bulk delete using a where clause (up to 5 documents)
- * await db.collection('laptops').delete().where({ in_stock: { $eq: false } }).count(5).exec();
+ * // Bulk delete using a where clause (up to 5 documents), newest first
+ * await db.collection('laptops').delete().where({ in_stock: { $eq: false } }).order('desc').count(5).exec();
+ *
+ * // Count-only prune (no where): remove the 20 oldest documents by _seq
+ * await db.collection('laptops').delete().count(20).exec();
  */
 export class DeleteQuery {
   private payload: Document;
@@ -488,6 +502,9 @@ export class DeleteQuery {
    * Supports the same operators as {@link GetQuery.where}.
    * Cannot be combined with {@link keys} or {@link drop}.
    *
+   * Matches are ordered by `_seq` before {@link count} is applied (see {@link order}),
+   * so a capped bulk delete is deterministic.
+   *
    * @example
    * .where({ in_stock: { $eq: false } })
    * .where({ price: { $lt: 500 } })
@@ -511,14 +528,37 @@ export class DeleteQuery {
   }
 
   /**
-   * Limit the maximum number of documents to delete (applied after filtering).
-   * Typically used with {@link where}.
+   * Limit the maximum number of documents to delete (applied after ordering by `_seq`).
+   *
+   * Used with {@link where} to cap a bulk filter delete (default `100`, max `1000`),
+   * or on its own — with no {@link keys}/{@link where}/{@link drop} — for a count-only
+   * prune that removes the oldest (default) or newest `n` documents by `_seq`.
+   *
+   * In the count-only mode `count` is **required** (there is no default), so a tiny
+   * payload can never silently destroy data.
    *
    * @example
-   * .count(10)
+   * .where({ in_stock: { $eq: false } }).count(10)   // cap a bulk filter delete
+   * .count(20)                                        // count-only: prune 20 oldest docs
    */
   count(n: number): this {
     this.payload["count"] = n as JsonValue;
+    return this;
+  }
+
+  /**
+   * Direction used to order matches by `_seq` **before** {@link count} is applied.
+   * Applies to both the {@link where} bulk delete and the count-only prune.
+   *
+   *   - `'asc'`  (default) — oldest documents first (lowest `_seq`),
+   *   - `'desc'`           — newest documents first (highest `_seq`).
+   *
+   * @example
+   * .where({ in_stock: { $eq: false } }).order('desc').count(5) // delete 5 newest matches
+   * .order('desc').count(20)                                    // prune 20 newest docs
+   */
+  order(direction: "asc" | "desc"): this {
+    this.payload["order"] = direction as JsonValue;
     return this;
   }
 

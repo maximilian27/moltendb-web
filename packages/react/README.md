@@ -14,9 +14,12 @@ Official React hooks wrapper for [MoltenDb](https://github.com/maximilian27/molt
 The package uses only stable React hooks (`useState`, `useEffect`, `useRef`, `useContext`, `createContext`) available
 since React 16.8. No concurrent features or React 18+ APIs are used in the library itself.
 
-## What's New in v2.0.0
+## What's New in v2
 
 - **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
+- **Delete `.order()` + count-only prune** *(query v2.3.0)* — order bulk-delete matches by `_seq` before `.count()` is
+  applied (`'asc'` default = oldest first, `'desc'` = newest first), and prune the oldest/newest `n` documents with a
+  bare `.delete().count(n)` (no `.where()`). See [`@moltendb-web/query`](../query/README.md).
 - **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted
   automatically when the limit is reached.
 - **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically
@@ -257,17 +260,21 @@ Subscribes to real-time mutation events from the database. The `listener` is cal
 document is created, updated, deleted, or a collection is dropped. The subscription is **automatically cleaned up** when
 the component unmounts — no manual unsubscription needed. Must be used inside `<MoltenDbProvider>`.
 
+The listener does **not** need to be wrapped in `useCallback`. The hook stores it in a ref internally, so the
+subscription is never torn down and re-created just because a new function reference is passed on a re-render.
+
 ```tsx
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useMoltenDbEvents } from '@moltendb-web/react';
 import type { DbEvent } from '@moltendb-web/react';
 
 function LiveFeed() {
   const [events, setEvents] = useState<DbEvent[]>([]);
 
-  useMoltenDbEvents(useCallback((evt: DbEvent) => {
+  // No useCallback needed — the hook handles referential stability internally.
+  useMoltenDbEvents((evt: DbEvent) => {
     setEvents((prev) => [evt, ...prev].slice(0, 50));
-  }, []));
+  });
 
   return (
     <ul>
@@ -277,10 +284,6 @@ function LiveFeed() {
     </ul>
   );
 }
-```
-
-> **Tip:** Wrap the listener in `useCallback` with an empty dependency array to keep it stable and avoid re-subscribing
-> on every render.
 
 ## API Reference
 

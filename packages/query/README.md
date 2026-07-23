@@ -13,7 +13,15 @@ real-time events without any local setup.
 
 ---
 
-## What's New in v2.0.0
+## What's New in v2.3.0
+
+- **Delete `.order()`** — order bulk-delete matches by `_seq` **before** `.count()` is applied, so a capped delete is
+  deterministic: `'asc'` (default) removes the oldest first (lowest `_seq`), `'desc'` the newest first.
+- **Count-only prune** — `.delete().count(n)` with no `.where()`/`.keys()`/`.drop()` removes the oldest (default) or
+  newest `n` documents by `_seq`, reusing the ordered `_seq` index like an unsorted `get()` (no scan, no decode).
+  `count` is **required** in this mode — a missing `count` deletes nothing.
+
+## What's New in v2
 
 - **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys.
 - **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted
@@ -78,13 +86,18 @@ await client.collection('laptops').delete().drop().exec();
 // DELETE — bulk delete with a where clause (v2.0.0)
 await client.collection('laptops').delete().where({in_stock: {$eq: false}}).exec();
 
-// DELETE — bulk delete up to 5 oldest out-of-stock laptops (v2.0.0)
+// DELETE — bulk delete up to 5 NEWEST out-of-stock laptops (order + count, v2.3.0)
+// Matches are ordered by _seq before count is applied — default 'asc' = oldest first.
 await client.collection('laptops')
     .delete()
     .where({in_stock: {$eq: false}})
-    .offset(10)
+    .order('desc')
     .count(5)
     .exec();
+
+// DELETE — count-only prune: remove the 20 oldest documents by _seq (v2.3.0)
+// No where/keys/drop — count is required. Use .order('desc') to prune the newest instead.
+await client.collection('laptops').delete().count(20).exec();
 
 // SET — capped collection (v2.0.0)
 await client.collection('recent_events')
@@ -146,13 +159,17 @@ Only the fields present in each patch object are updated — all other fields ar
 
 | Method                | Description                                                     |
 |-----------------------|-----------------------------------------------------------------|
-| `.keys(key \| key[])` | Delete one or more documents by key                             |
-| `.where(clause)`      | *(v2.0.0)* Bulk-delete all documents matching the filter clause |
-| `.count(n)`           | *(v2.0.0)* Limit the number of documents to delete              |
-| `.offset(n)`          | *(v2.0.0)* Skip the first N matching documents before deleting  |
-| `.drop()`             | Drop the entire collection                                      |
-| `.build()`            | Return the raw JSON payload without sending                     |
-| `.exec()`             | Send and return `{ count, status }`                             |
+| `.keys(key \| key[])` | Delete one or more documents by key                                          |
+| `.where(clause)`      | *(v2.0.0)* Bulk-delete all documents matching the filter clause               |
+| `.count(n)`           | *(v2.0.0)* Cap a bulk delete, or *(v2.3.0)* prune N oldest/newest docs (no `where`) |
+| `.order(dir)`         | *(v2.3.0)* Order matches by `_seq` before `count` — `'asc'` (default) / `'desc'` |
+| `.offset(n)`          | *(v2.0.0)* Skip the first N matching documents before deleting                 |
+| `.drop()`             | Drop the entire collection                                                    |
+| `.build()`            | Return the raw JSON payload without sending                                   |
+| `.exec()`             | Send and return `{ count, status }`                                          |
+
+With no `.keys()`/`.where()`/`.drop()`, a bare `.count(n)` becomes a **count-only prune** that removes the oldest
+(default) or newest `n` documents by `_seq` — `count` is required in this mode (there is no default).
 
 ---
 

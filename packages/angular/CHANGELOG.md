@@ -1,5 +1,17 @@
 # @moltendb-web/angular
 
+## 2.3.0
+
+### Minor Changes
+
+- a9ea23a: bulk deletes without filer and fix wasm ttl issue
+
+### Patch Changes
+
+- Updated dependencies [a9ea23a]
+  - @moltendb-web/query@2.3.0
+  - @moltendb-web/core@2.3.0
+
 ## 2.2.0
 
 ### Minor Changes
