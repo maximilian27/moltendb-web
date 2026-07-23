@@ -1,5 +1,11 @@
 # @moltendb-web/core
 
+## 2.4.0
+
+### Minor Changes
+
+- 5cb0d77: bulk deletes without filer and fix wasm ttl issue
+
 ## 2.3.0
 
 ### Minor Changes
