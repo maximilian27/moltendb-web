@@ -47,11 +47,14 @@ Prefer to run it in your own environment? You can **[clone the demo repository](
 
 ---
 
-## What's New in v2.0.0
+## What's New in v2
 
 ### Query Builder
 
 - **Bulk Delete with `.where()`** — delete documents matching a filter clause without listing individual keys (see [`@moltendb-web/query`](../query/README.md)).
+- **Delete `.order()` + count-only prune** *(query v2.3.0)* — order bulk-delete matches by `_seq` before `.count()` is
+    applied (`'asc'` default = oldest first, `'desc'` = newest first), and prune the oldest/newest `n` documents with a
+    bare `.delete().count(n)` (no `.where()`). See [`@moltendb-web/query`](../query/README.md).
 - **Capped Collections (`.maxSize()`)** — cap a collection to a maximum number of documents; oldest entries are evicted automatically when the limit is reached.
 - **TTL Collections (`.ttl()`)** — set a time-to-live (in seconds) on a collection; documents are removed automatically after expiry.
 
@@ -326,6 +329,33 @@ Tab 1 (Leader) ──owns──▶ Web Worker ──▶ WASM Engine ──▶ OP
      └── BroadcastChannel ──▶ Tab 2 (Follower)
                           ──▶ Tab 3 (Follower)
 ```
+
+### Automatic OPFS Fallback
+
+If OPFS is unavailable (private/incognito browsing, unsupported browser, cross-origin iframe) and `inMemory` was **not** set explicitly, MoltenDb will automatically fall back to in-memory mode instead of throwing an error. A `console.warn` is emitted so you are aware of the degradation:
+
+```
+[MoltenDb] Origin Private File System (OPFS) is not available in this browser context
+(e.g. private/incognito window, unsupported browser, or cross-origin iframe).
+Falling back to in-memory mode — data will not be persisted across sessions.
+To suppress this warning, set { inMemory: true } explicitly.
+```
+
+You can detect the fallback programmatically via the `isInMemoryFallback` property:
+
+```ts
+const db = new MoltenDb('my-app');
+await db.init();
+
+if (db.isInMemoryFallback) {
+  // OPFS was unavailable; show a banner to inform the user
+  showBanner('Data will not be saved — storage is unavailable in this context.');
+}
+```
+
+`isInMemoryFallback` reflects the state of the **current tab**. Because the fallback is detected at `init()` time on the main thread, every tab that calls `init()` performs its own OPFS check independently — so `isInMemoryFallback` will be `true` on any tab where OPFS is unavailable.
+
+This ensures your application stays functional in private windows, older browsers, and embedded webviews — while the developer is always informed via the console warning.
 
 ### Real-Time Events (Pub/Sub)
 

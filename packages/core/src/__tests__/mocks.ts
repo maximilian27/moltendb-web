@@ -120,9 +120,9 @@ export class FakeWorker {
       if (!col) return null;
       const keys = msg.keys as string | undefined;
 
-      // SIMULATE RUST: Return the internal Map directly
       if (keys) return col.get(keys) ?? null;
-      return col; // This is a Map!
+      // Convert to a plain object to match the real WASM engine's response shape.
+      return Object.fromEntries(col);
     }
 
     if (action === "delete" && collection) {

@@ -18,8 +18,9 @@ export interface MoltenDbOptions {
    * Run entirely in RAM — no OPFS writes.
    *
    * All tabs share a single in-memory store via the leader/follower election.
-   * Data persists as long as at least one tab is open.
-   * When **any** tab refreshes or closes, the shared RAM store is wiped for all tabs.
+   * Data is wiped when **any** tab refreshes or closes — a `clear_all` signal
+   * is broadcast on `beforeunload` so the leader can wipe the Rust store and
+   * notify all followers to reject their in-flight requests.
    *
    * Default: false.
    */
@@ -37,10 +38,16 @@ export interface DbEvent {
 export class MoltenDb {
   readonly dbName: string;
   readonly workerUrl?: string | URL;
-  readonly options: MoltenDbOptions;
+  public options: MoltenDbOptions;
   worker: Worker | null = null;
+  /** True when OPFS was unavailable and MoltenDb automatically fell back to in-memory mode. */
+  public isInMemoryFallback: boolean = false;
   // Multi-tab Sync State
-  isLeader: boolean = false;
+  private _isLeader: boolean = false;
+  /** Whether this tab is the current leader. Read-only to callers. */
+  get isLeader(): boolean {
+    return this._isLeader;
+  }
   /** Legacy global hook. Use `subscribe()` for multi-component listeners. */
   public onEvent?: (event: DbEvent) => void;
   private initPromise: Promise<void> | null = null;
@@ -76,8 +83,42 @@ export class MoltenDb {
     // 1. If initialization has already started or finished, return the existing promise
     if (this.initPromise) return this.initPromise;
 
-    // 2. When running in-memory, any tab refresh should wipe the shared RAM store.
-    //    Broadcast a clear_all signal on beforeunload so the leader can wipe the Rust DashMap.
+    this.initPromise = this._init();
+    return this.initPromise;
+  }
+
+  private async _init(): Promise<void> {
+    // Guard: Web Locks API is required. Not available in SSR, some test runners, or very old browsers.
+    if (typeof navigator === "undefined" || !navigator.locks) {
+      throw new Error(
+        "[MoltenDb] navigator.locks is not available in this environment. " +
+          "MoltenDb requires a modern browser with Web Locks API support (Chrome 69+, Firefox 96+, Safari 15.4+)."
+      );
+    }
+
+    // Check OPFS availability upfront, before starting leader election or any workers.
+    // This is done here on the main thread so the decision is made once and shared across
+    // all code paths (leader, follower, and future promotions).
+    if (!this.options.inMemory) {
+      try {
+        await navigator.storage.getDirectory();
+      } catch {
+        console.warn(
+          "[MoltenDb] Origin Private File System (OPFS) is not available in this browser context " +
+            "(e.g. private/incognito window, unsupported browser, or cross-origin iframe). " +
+            "Falling back to in-memory mode — data will not be persisted across sessions. " +
+            "To suppress this warning, set { inMemory: true } explicitly."
+        );
+        this.options.inMemory = true;
+        this.isInMemoryFallback = true;
+      }
+    }
+
+    this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
+
+    // When running in-memory, any tab refresh or close should wipe the shared
+    // RAM store. Broadcast a clear_all signal on beforeunload so the leader
+    // can wipe the Rust DashMap and notify followers.
     if (this.options.inMemory) {
       window.addEventListener("beforeunload", () => {
         try {
@@ -86,10 +127,7 @@ export class MoltenDb {
       });
     }
 
-    // 3. Otherwise, start the initialization and store the promise
-    this.initPromise = new Promise<void>((resolveInit, rejectInit) => {
-      this.bc = new BroadcastChannel(`moltendb_channel_${this.dbName}`);
-
+    await new Promise<void>((resolveInit, rejectInit) => {
       navigator.locks.request(
         `moltendb_lock_${this.dbName}`,
         { ifAvailable: true },
@@ -119,8 +157,6 @@ export class MoltenDb {
         }
       );
     });
-
-    return this.initPromise;
   }
   // ───────────────────────────────────────────────────────────────────────────
 
@@ -250,7 +286,7 @@ export class MoltenDb {
       this.worker = null;
     }
     this.initPromise = null;
-    this.isLeader = false;
+    this._isLeader = false;
   }
 
   private dispatchEvent(event: DbEvent) {
@@ -265,19 +301,7 @@ export class MoltenDb {
   }
 
   private async startAsLeader() {
-    // Guard: OPFS is required
-    if (!this.options.inMemory) {
-      try {
-        await navigator.storage.getDirectory();
-      } catch {
-        throw new Error(
-          "[MoltenDb] Origin Private File System (OPFS) is not available in this browser context. " +
-            "Try a non-private window or a browser that supports OPFS (Chrome 102+, Firefox 111+, Safari 15.2+)."
-        );
-      }
-    }
-
-    this.isLeader = true;
+    this._isLeader = true;
     if (this.worker) this.worker.terminate();
 
     const url =
@@ -340,7 +364,6 @@ export class MoltenDb {
         }
         return;
       }
-
       if (msg.type === "query" && msg.action) {
         try {
           const result = await this.sendMessage(msg.action, msg.payload);
@@ -357,7 +380,7 @@ export class MoltenDb {
   }
 
   private startAsFollower() {
-    this.isLeader = false;
+    this._isLeader = false;
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
@@ -365,7 +388,7 @@ export class MoltenDb {
 
     this.bc.onmessage = (e) => {
       const data = e.data;
-      // --- THE KILKILL SWITCH ---
+      // --- THE KILL SWITCH ---
       if (data.type === "kill_signal") {
         this.terminate(); // Kills zombie worker instantly
         this.dispatchEvent({
