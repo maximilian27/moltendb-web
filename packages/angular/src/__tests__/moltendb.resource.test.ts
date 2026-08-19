@@ -43,6 +43,26 @@ describe("moltenDbResource", () => {
 
       expect(consoleSpy).not.toHaveBeenCalled();
     });
+
+    it("should return the provided initialValue synchronously instead of undefined", () => {
+      const injector = Injector.create({
+        providers: [
+          { provide: PLATFORM_ID, useValue: "server" },
+          { provide: MOLTEN_CONFIG, useValue: { name: "test-db" } },
+          { provide: MoltenDbService, useClass: MoltenDbService },
+        ],
+      });
+
+      const resource = runInInjectionContext(injector, () =>
+        moltenDbResource("greetings", async (col) => col.get().exec(), {
+          initialValue: [] as { id: string; text: string }[],
+        })
+      );
+
+      expect(resource.isLoading()).toBe(false);
+      expect(resource.error()).toBe(null);
+      expect(resource.value()).toEqual([]);
+    });
   });
 
   describe("Browser", () => {
@@ -71,6 +91,56 @@ describe("moltenDbResource", () => {
         service.isReady.set(true); // Ensure it's ready so effect (mocked) runs fetchData
 
         resource = moltenDbResource("greetings", queryFn);
+      });
+
+      // Wait for fetchData
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(queryFn).toHaveBeenCalled();
+      expect(resource.value()).toEqual([{ id: "1", text: "Hello" }]);
+      expect(resource.isLoading()).toBe(false);
+      expect(resource.error()).toBe(null);
+    });
+
+    it("should start at initialValue before the fetch resolves, and not call queryFn if never ready", () => {
+      const queryFn = vi.fn().mockResolvedValue([{ id: "1", text: "Hello" }]);
+
+      const injector = Injector.create({
+        providers: [
+          { provide: PLATFORM_ID, useValue: "browser" },
+          { provide: MOLTEN_CONFIG, useValue: { name: "test-db" } },
+          { provide: MoltenDbService, useClass: MoltenDbService },
+        ],
+      });
+
+      // Deliberately never flip isReady() so `fetchData()` never runs — this
+      // proves `initialValue` alone (not a fetch) seeds `value()`.
+      const resource = runInInjectionContext(injector, () =>
+        moltenDbResource("greetings", queryFn, { initialValue: [] })
+      );
+
+      expect(queryFn).not.toHaveBeenCalled();
+      expect(resource.value()).toEqual([]);
+      expect(resource.isLoading()).toBe(false);
+      expect(resource.error()).toBe(null);
+    });
+
+    it("should overwrite initialValue once the first fetch resolves", async () => {
+      const queryFn = vi.fn().mockResolvedValue([{ id: "1", text: "Hello" }]);
+
+      const injector = Injector.create({
+        providers: [
+          { provide: PLATFORM_ID, useValue: "browser" },
+          { provide: MOLTEN_CONFIG, useValue: { name: "test-db" } },
+          { provide: MoltenDbService, useClass: MoltenDbService },
+        ],
+      });
+
+      let resource: any;
+      runInInjectionContext(injector, () => {
+        const service = inject(MoltenDbService);
+        service.isReady.set(true); // Ensure it's ready so effect (mocked) runs fetchData
+        resource = moltenDbResource("greetings", queryFn, { initialValue: [] });
       });
 
       // Wait for fetchData

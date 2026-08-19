@@ -169,16 +169,30 @@ export class AdminComponent {
 
 Returns the `MoltenDbClient` instance for imperative database access. Must be called in an injection context.
 
-### `moltenDbResource<T>(collection, queryFn)`
+### `moltenDbResource<T>(collection, queryFn, options?)`
 
 Creates a reactive resource bound to a collection. Automatically re-fetches when the collection is mutated. Must be
 called in an injection context.
+
+Accepts an optional third `options` argument:
+
+| Option         | Type | Default     | Description                                                                                                 |
+|----------------|------|-------------|---------------------------------------------------------------------------------------------------------------|
+| `initialValue` | `T`  | `undefined` | Seeds the `value` signal before the first fetch resolves in the browser, and is what `value()` stays at on the server (no fetch is ever attempted there) |
+
+```typescript
+const laptops = moltenDbResource<Laptop[]>('laptops', (col) => col.get().exec() as Promise<Laptop[]>, {
+  initialValue: []
+});
+// laptops.value() is `[]` immediately — in the browser, before the first fetch resolves,
+// and forever on the server, instead of `undefined`.
+```
 
 Returns a `MoltenDbResource<T>` with three readonly signals:
 
 | Signal      | Type                     | Description                         |
 |-------------|--------------------------|-------------------------------------|
-| `value`     | `Signal<T \| undefined>` | The latest query result             |
+| `value`     | `Signal<T \| undefined>` | The latest query result, or `options?.initialValue` (defaults to `undefined`) before the first fetch resolves |
 | `isLoading` | `Signal<boolean>`        | `true` while a fetch is in progress |
 | `error`     | `Signal<any \| null>`    | The last error, or `null` if none   |
 
@@ -277,11 +291,12 @@ export class LiveFeedComponent {
 | `moltenDbIsLeader()`                    | Injection hook | Returns `true` if the current tab is the Leader                                                                        |
 | `moltenDbTerminate()`                   | Injection hook | Terminates the MoltenDb worker                                                                                         |
 | `moltenDbClearOpfs()`                   | Injection hook | *(v2.0.0)* Flush and close the OPFS sync handle — call before `moltenDbTerminate()`                                    |
-| `moltenDbResource(collection, queryFn)` | Injection hook | Reactive resource with `value`, `isLoading`, `error` signals and auto-refresh                                          |
+| `moltenDbResource(collection, queryFn, options?)` | Injection hook | Reactive resource with `value`, `isLoading`, `error` signals, auto-refresh, and an optional `initialValue`             |
 | `moltenDbEvents(listener)`              | Injection hook | *(v2.0.0)* Subscribe to real-time `DbEvent` mutation events; auto-unsubscribes when the injection context is destroyed |
 | `DbEvent`                               | Type           | Event object emitted on mutations: `{ event, collection, key, new_v }`                                                 |
 | `AngularMoltenDbOptions`                | Interface      | Config passed to `provideMoltenDb` — extends `MoltenDbOptions` with a required `name` field                            |
 | `MoltenDbResource<T>`                   | Interface      | Return type of `moltenDbResource`: `{ value, isLoading, error }` signals                                               |
+| `MoltenDbResourceOptions<T>`            | Interface      | Options accepted by `moltenDbResource`: `{ initialValue? }`                                                            |
 
 ---
 
@@ -314,9 +329,11 @@ MoltenDb-using route yourself just to avoid a server crash — the library does 
   `"[MoltenDb] MoltenDb is not available in a server-side rendering context."` — no hang, no synchronous throw
   mid-chain.
 - **`moltenDbResource()`** — resolves synchronously to a documented empty state on the server: `isLoading()` is
-  `false`, `error()` is `null`, and `value()` is `undefined`. No fetch is attempted, so templates using
-  `@if (resource.isLoading())` / `@if (resource.value(); as list)` / `@if (resource.error())` render their
-  empty/no-data branch immediately with no console errors about `navigator.locks`, WASM, or OPFS.
+  `false`, `error()` is `null`, and `value()` is `options?.initialValue` (or `undefined` if you didn't pass one). No
+  fetch is attempted, so templates using `@if (resource.isLoading())` / `@if (resource.value(); as list)` /
+  `@if (resource.error())` render their empty/no-data branch immediately with no console errors about
+  `navigator.locks`, WASM, or OPFS. Pass `{ initialValue: [] }` for list-returning `queryFn`s to get a typed empty
+  array on the server instead of `undefined`.
 
 There is **no public readiness API** — no `isReady` getter on the service and no standalone `moltenDbReady()`
 function is exported (or planned). `isReady` is a private, internal implementation detail used only by
@@ -351,7 +368,8 @@ export class GreetingsComponent {
 ```
 
 On the server this renders the "no data yet" branch immediately (nothing matches `isLoading()`/`error()`, and
-`value()` is `undefined`); in the browser it behaves exactly as before, becoming reactive once MoltenDb boots.
+`value()` is `undefined` since no `initialValue` was passed here); in the browser it behaves exactly as before,
+becoming reactive once MoltenDb boots.
 
 Because of this, excluding MoltenDb-using routes from prerendering (e.g. `RenderMode.Client` in
 `app.routes.server.ts`) is now a **recommendation for a better first paint**, not a requirement to avoid a
