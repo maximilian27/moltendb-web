@@ -1,5 +1,13 @@
 # @moltendb-web/core
 
+## 2.4.0
+
+### No Direct Changes
+
+- Updated dependencies [73e397a]
+  - @moltendb-web/core@2.4.0
+  - @moltendb-web/query@2.4.0
+
 ## 2.3.0
 
 ### Minor Changes

@@ -1,5 +1,24 @@
 # @moltendb-web/angular
 
+## 2.4.0
+
+### Minor Changes
+
+- e008c4b: feat: `moltenDbResource()` accepts an optional `initialValue` via a new third `options` argument.
+
+  - `moltenDbResource(collection, queryFn, { initialValue })` seeds the `value` signal with `initialValue` instead of always defaulting to `undefined`.
+  - In the browser, `value()` starts at `initialValue` and is overwritten once the first fetch resolves (or a later refetch completes) — refetch semantics are otherwise unchanged.
+  - On the server (SSR/prerendering), `value()` now returns `initialValue` (still synchronous, still `isLoading() === false` and `error() === null`) instead of always `undefined` — e.g. pass `{ initialValue: [] }` for list-returning `queryFn`s to get a typed empty array.
+  - The `value` signal's type remains `Signal<T | undefined>` (backward compatible) whether or not `initialValue` is supplied.
+
+- 8b82637: feat: SSR-safe platform guard for `MoltenDbService`, `moltendbClient()`, and `moltenDbResource()`.
+
+  - `MoltenDbService` now detects server vs. browser (`PLATFORM_ID` / `isPlatformBrowser`) and never boots WASM, OPFS, or the Web Locks API on the server. On the server, `db`/`client` are lightweight no-op stubs with the same public shape as the real implementations — no `?.` needed.
+  - On the server, `moltendbClient()`'s builder chains (`.collection().set()`, `.get()`, `.delete()`, ...) keep working synchronously, but the terminal `.exec()` rejects with a clear error: `"[MoltenDb] MoltenDb is not available in a server-side rendering context."` — no hang.
+  - On the server, `moltenDbResource()` resolves synchronously to a documented empty state (`isLoading()` false, `error()` null, `value()` undefined) instead of staying in perpetual loading.
+  - The internal `isReady` signal remains a private implementation detail — no public getter or standalone `moltenDbReady()` export was added; the previously-existing `moltenDbReady()` export has been removed (it was never meant to be public and caused `NG0203` when called from templates).
+
+
 ## 2.3.0
 
 ### Minor Changes
