@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/react",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Official React hooks wrapper for MoltenDb",
   "type": "module",
   "author": "Maximilian Both <admin@moltendb.dev>",
@@ -25,20 +25,29 @@
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly --declaration --declarationDir dist",
     "dev": "vite build --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
     "react": ">=16.8.0"
   },
   "dependencies": {
-    "@moltendb-web/core": "^2.3.0",
-    "@moltendb-web/query": "^2.3.0"
+    "@moltendb-web/core": "^2.4.0",
+    "@moltendb-web/query": "^2.4.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.4",
+    "@vitest/coverage-v8": "^1.6.0",
+    "happy-dom": "^14.0.0",
     "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "typescript": "^5.5.3",
     "vite": "^8.0.10",
-    "vite-plugin-dts": "^3.0.0"
+    "vite-plugin-dts": "^3.0.0",
+    "vitest": "^1.6.0"
   }
 }

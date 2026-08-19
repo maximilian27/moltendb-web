@@ -8,11 +8,6 @@ export function useMoltenDb(): MoltenDbClient {
   return useMoltenDbContext().client;
 }
 
-/** Returns true once MoltenDb has finished initialising. Must be used inside <MoltenDbProvider>. */
-export function useMoltenDbReady(): boolean {
-  return useMoltenDbContext().isReady;
-}
-
 /** Returns true if this tab is the Leader (running the WASM worker). Must be used inside <MoltenDbProvider>. */
 export function useMoltenDbIsLeader(): boolean {
   return useMoltenDbContext().db.isLeader;
