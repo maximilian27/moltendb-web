@@ -1,4 +1,12 @@
-import { effect, inject, signal, Signal, untracked } from "@angular/core";
+import {
+  effect,
+  inject,
+  PLATFORM_ID,
+  signal,
+  Signal,
+  untracked,
+} from "@angular/core";
+import { isPlatformBrowser } from "@angular/common";
 import { MoltenDbClient } from "@moltendb-web/query";
 import { MoltenDbService } from "./moltendb.service";
 
@@ -17,10 +25,22 @@ export function moltenDbResource<T>(
   ) => Promise<T>
 ): MoltenDbResource<T> {
   const molten = inject(MoltenDbService);
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   const value = signal<T | undefined>(undefined);
   const isLoading = signal<boolean>(false);
   const error = signal<any | null>(null);
+
+  // Server (SSR/prerendering): MoltenDb never boots here, so resolve to an
+  // explicit, documented empty state — `isLoading()` false, `error()` null,
+  // `value()` undefined — synchronously, with no fetch attempted and no hang.
+  if (!isBrowser) {
+    return {
+      value: value.asReadonly(),
+      isLoading: isLoading.asReadonly(),
+      error: error.asReadonly(),
+    };
+  }
 
   const fetchData = async () => {
     untracked(() => isLoading.set(true));
