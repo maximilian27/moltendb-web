@@ -12,14 +12,6 @@
   - `useMoltenDbResource(collection, queryFn, { initialValue })` seeds `value` with `initialValue` instead of always defaulting to `undefined`, both as the pre-fetch value in the browser and as the permanent server-side value.
   - The internal readiness flag remains a private implementation detail — the previously-existing `useMoltenDbReady()` export has been removed (it exposed internal state that was never meant to be public); no replacement readiness hook was added.
 
-- 73e397a: v2.4.0
-
-### Patch Changes
-
-- Updated dependencies [73e397a]
-  - @moltendb-web/core@2.4.0
-  - @moltendb-web/query@2.4.0
-
 ## 2.3.0
 
 ### Minor Changes

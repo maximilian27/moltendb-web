@@ -18,13 +18,6 @@
   - On the server, `moltenDbResource()` resolves synchronously to a documented empty state (`isLoading()` false, `error()` null, `value()` undefined) instead of staying in perpetual loading.
   - The internal `isReady` signal remains a private implementation detail — no public getter or standalone `moltenDbReady()` export was added; the previously-existing `moltenDbReady()` export has been removed (it was never meant to be public and caused `NG0203` when called from templates).
 
-- 73e397a: v2.4.0
-
-### Patch Changes
-
-- Updated dependencies [73e397a]
-  - @moltendb-web/core@2.4.0
-  - @moltendb-web/query@2.4.0
 
 ## 2.3.0
 
