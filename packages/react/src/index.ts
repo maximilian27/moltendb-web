@@ -5,7 +5,6 @@ export type {
 } from "./MoltenDbContext";
 export {
   useMoltenDb,
-  useMoltenDbReady,
   useMoltenDbIsLeader,
   useMoltenDbTerminate,
   useMoltenDbClearOpfs,
@@ -13,4 +12,7 @@ export {
 } from "./useMoltenDb";
 export type { DbEvent } from "@moltendb-web/core";
 export { useMoltenDbResource } from "./useMoltenDbResource";
-export type { MoltenDbResourceResult } from "./useMoltenDbResource";
+export type {
+  MoltenDbResourceResult,
+  MoltenDbResourceOptions,
+} from "./useMoltenDbResource";

@@ -8,11 +8,6 @@ export function moltendbClient(): MoltenDbClient {
   return inject(MoltenDbService).client;
 }
 
-/** Returns true once MoltenDb has finished initialising. */
-export function moltenDbReady(): boolean {
-  return inject(MoltenDbService).isReady();
-}
-
 /** Returns true if this tab is the Leader (running the WASM worker). */
 export function moltenDbIsLeader(): boolean {
   return inject(MoltenDbService).db.isLeader;

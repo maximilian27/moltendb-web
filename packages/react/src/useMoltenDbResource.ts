@@ -8,24 +8,40 @@ export interface MoltenDbResourceResult<T> {
   error: any | null;
 }
 
+export interface MoltenDbResourceOptions<T> {
+  /**
+   * Value the `value` state starts with, before the first fetch resolves in
+   * the browser — and what it stays at (unchanged) on the server, since no
+   * fetch is ever attempted there. Defaults to `undefined` when omitted.
+   */
+  initialValue?: T;
+}
+
 /**
  * Hook to reactively fetch data from a MoltenDb collection.
  * Automatically re-fetches when the collection changes.
  * Must be used inside <MoltenDbProvider>.
  *
+ * On the server (SSR/prerendering), MoltenDb never boots — `isReady` stays
+ * `false` forever there — so this resolves synchronously to `isLoading: false`,
+ * `error: null`, and `value: options?.initialValue` (or `undefined` if none was
+ * given), with no fetch attempted and no hang.
+ *
  * @param collection - The collection name to query.
  * @param queryFn - A function receiving the pre-bound collection accessor and the full client.
+ * @param options - Optional settings, e.g. `{ initialValue }` to seed `value` instead of `undefined`.
  */
 export function useMoltenDbResource<T>(
   collection: string,
   queryFn: (
     collection: ReturnType<MoltenDbClient["collection"]>,
     client: MoltenDbClient
-  ) => Promise<T>
+  ) => Promise<T>,
+  options?: MoltenDbResourceOptions<T>
 ): MoltenDbResourceResult<T> {
   const { db, client, isReady } = useMoltenDbContext();
 
-  const [value, setValue] = useState<T | undefined>(undefined);
+  const [value, setValue] = useState<T | undefined>(options?.initialValue);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<any | null>(null);
 
@@ -34,6 +50,9 @@ export function useMoltenDbResource<T>(
   queryFnRef.current = queryFn;
 
   useEffect(() => {
+    // `isReady` never flips true on the server (see MoltenDbContext), and
+    // effects never run during server rendering anyway — this keeps the
+    // "don't fetch on the server" contract explicit either way.
     if (!isReady) return;
 
     let cancelled = false;

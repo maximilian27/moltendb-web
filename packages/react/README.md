@@ -141,7 +141,7 @@ function AddTodoButton() {
 }
 ```
 
-### `useMoltenDbResource<T>(collection, queryFn)`
+### `useMoltenDbResource<T>(collection, queryFn, options?)`
 
 Reactively fetches data from a collection. Automatically re-fetches whenever the collection is mutated. Returns
 `{ value, isLoading, error }`.
@@ -188,21 +188,20 @@ const {value: expensiveLaptops} = useMoltenDbResource(
 );
 ```
 
-### `useMoltenDbReady()`
+#### With an `initialValue`
 
-Returns `true` once MoltenDb has finished initialising. Useful for gating UI until the database is ready. Must be used
-inside `<MoltenDbProvider>`.
+Pass a third `options` argument to seed `value` instead of always starting at `undefined` — useful while the first
+fetch is in flight in the browser, and it's also what `value` resolves to on the server (see
+[Server-Side Rendering](#server-side-rendering-ssr) below):
 
 ```tsx
-import {useMoltenDbReady} from '@moltendb-web/react';
-
-function AppShell({children}: { children: React.ReactNode }) {
-  const isReady = useMoltenDbReady();
-
-  if (!isReady) return <p>⚙ Initialising database…</p>;
-
-  return <>{children}</>;
-}
+const {value: laptops} = useMoltenDbResource<Laptop[]>(
+    'laptops',
+    (col) => col.get().exec() as Promise<Laptop[]>,
+    {initialValue: []}
+);
+// `laptops` is `[]` immediately — before the first fetch resolves in the browser,
+// and forever on the server — instead of `undefined`.
 ```
 
 ### `useMoltenDbIsLeader()`
@@ -291,16 +290,16 @@ function LiveFeed() {
 |--------------------------------------------|-----------|--------------------------------------------------------------------------------------------------------------------------|
 | `MoltenDbProvider`                         | Component | Context provider — initializes MoltenDb and exposes the client to the subtree                                            |
 | `useMoltenDb()`                            | Hook      | Returns the `MoltenDbClient` instance                                                                                    |
-| `useMoltenDbReady()`                       | Hook      | Returns `true` once MoltenDb has finished initialising                                                                   |
 | `useMoltenDbIsLeader()`                    | Hook      | Returns `true` if the current tab is the Leader (running the WASM worker)                                                |
 | `useMoltenDbTerminate()`                   | Hook      | Returns a function that terminates the MoltenDb worker                                                                   |
 | `useMoltenDbClearOpfs()`                   | Hook      | *(v2.0.0)* Returns an async function that flushes and closes the OPFS sync handle — call before `useMoltenDbTerminate()` |
-| `useMoltenDbResource(collection, queryFn)` | Hook      | Reactive data fetching with `value`, `isLoading`, `error` and auto-refresh on mutations                                  |
+| `useMoltenDbResource(collection, queryFn, options?)` | Hook | Reactive data fetching with `value`, `isLoading`, `error`, auto-refresh on mutations, and an optional `initialValue`     |
 | `useMoltenDbEvents(listener)`              | Hook      | Subscribe to real-time `DbEvent` mutation events                                                                         |
 | `DbEvent`                                  | Type      | Event object emitted on mutations: `{ event, collection, key, new_v }`                                                   |
 | `MoltenDbProviderProps`                    | Interface | Props for `MoltenDbProvider`: `{ config: ReactMoltenDbOptions, children }`                                               |
 | `ReactMoltenDbOptions`                     | Interface | Config passed to the provider — extends `MoltenDbOptions` with a required `name` field                                   |
 | `MoltenDbResourceResult<T>`                | Interface | Return type of `useMoltenDbResource`: `{ value, isLoading, error }`                                                      |
+| `MoltenDbResourceOptions<T>`               | Interface | Options accepted by `useMoltenDbResource`: `{ initialValue? }`                                                           |
 
 ## Configuration
 
@@ -316,10 +315,64 @@ function LiveFeed() {
 | `maxKeysPerRequest` | `number`            | `1000`       | Maximum number of keys allowed per JSON request                                                                                                       |
 | `workerUrl`         | `string \| URL`     | `undefined`  | Custom URL or path to `moltendb-worker.js`                                                                                                            |
 
+## Server-Side Rendering (SSR)
+
+`MoltenDbProvider` detects whether it is running in the browser or on the server (`typeof window === 'undefined'`)
+and **never boots WASM, OPFS, or the Web Locks API outside the browser**. You no longer need to guard every
+MoltenDb-using route yourself just to avoid a server crash — the library does it internally:
+
+- **`useMoltenDb()` / `db` / `client`** — on the server these are lightweight no-op stubs with the same public shape
+  as the real implementations, so you never need extra `?.` checks to call them. Builder chains keep working
+  synchronously (`.collection('x').set({...})`, `.get()`, `.delete().keys('a')`, `.sort([...])`, etc.), but the
+  terminal `.exec()` call always rejects with a clear, actionable error:
+  `"[MoltenDb] MoltenDb is not available in a server-side rendering context."` — no hang, no synchronous throw
+  mid-chain.
+- **`useMoltenDbResource()`** — resolves synchronously to a documented empty state on the server: `isLoading` is
+  `false`, `error` is `null`, and `value` is `options?.initialValue` (or `undefined` if you didn't pass one). No
+  fetch is attempted, so components branching on `isLoading` / `value` / `error` render their empty/no-data state
+  immediately, with no console errors about `navigator.locks`, WASM, or OPFS. Pass `{ initialValue: [] }` for
+  list-returning `queryFn`s to get a typed empty array on the server instead of `undefined`.
+
+There is **no public readiness API** — no standalone `useMoltenDbReady()` hook is exported (or planned). The
+underlying `isReady` flag is a private, internal implementation detail used only by `useMoltenDbResource()` to know
+when it's safe to fetch; it is intentionally not part of the public API surface. Gate UI on the database instead
+through the `useMoltenDbResource()` result shown above:
+
+```tsx
+import {useMoltenDbResource} from '@moltendb-web/react';
+
+function Greetings() {
+  const {value: greetings, isLoading, error} = useMoltenDbResource(
+      'greetings',
+      (col) => col.get().exec()
+  );
+
+  if (isLoading) return <p>⚙ Loading…</p>;
+  if (error) return <p className="error">{error.message}</p>;
+  if (!greetings) return <p>No greetings yet.</p>;
+
+  return (
+      <ul>
+        {Object.entries(greetings).map(([id, g]: [string, any]) => (
+            <li key={id}>{g.text}</li>
+        ))}
+      </ul>
+  );
+}
+```
+
+On the server this renders the "no data yet" branch immediately (`isLoading`/`error` never match, and `value` is
+`undefined` since no `initialValue` was passed here); in the browser it behaves exactly as before, becoming
+reactive once MoltenDb boots.
+
+Because of this, excluding MoltenDb-using routes from prerendering/SSR is now a **recommendation for a better first
+paint**, not a requirement to avoid a build/SSR crash.
+
 ## Notes
 
-- `MoltenDbProvider` initialises the database asynchronously. Hooks will not return data until `isReady` is `true` —
-  `useMoltenDbResource` handles this automatically by waiting before fetching.
+- `MoltenDbProvider` initialises the database asynchronously in the browser. Hooks will not return data until the
+  (private, internal) readiness flag flips — `useMoltenDbResource` handles this automatically by waiting before
+  fetching. On the server this flag never flips, by design (see [Server-Side Rendering](#server-side-rendering-ssr)).
 - Multiple `MoltenDbProvider` instances with the **same `name`** will share the same underlying OPFS storage but
   maintain separate in-memory instances. Use the same `name` across tabs for cross-tab sync via the built-in
   leader/follower mechanism.

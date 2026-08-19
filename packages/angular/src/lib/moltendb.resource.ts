@@ -1,4 +1,12 @@
-import { effect, inject, signal, Signal, untracked } from "@angular/core";
+import {
+  effect,
+  inject,
+  PLATFORM_ID,
+  signal,
+  Signal,
+  untracked,
+} from "@angular/core";
+import { isPlatformBrowser } from "@angular/common";
 import { MoltenDbClient } from "@moltendb-web/query";
 import { MoltenDbService } from "./moltendb.service";
 
@@ -8,19 +16,42 @@ export interface MoltenDbResource<T> {
   error: Signal<any | null>;
 }
 
+export interface MoltenDbResourceOptions<T> {
+  /**
+   * Value the `value` signal starts with, before the first fetch resolves in
+   * the browser — and what it stays at (unchanged) on the server, since no
+   * fetch is ever attempted there. Defaults to `undefined` when omitted.
+   */
+  initialValue?: T;
+}
+
 export function moltenDbResource<T>(
   collection: string,
   //  Automatically infer the return type of .collection()
   queryFn: (
     collection: ReturnType<MoltenDbClient["collection"]>,
     client: MoltenDbClient
-  ) => Promise<T>
+  ) => Promise<T>,
+  options?: MoltenDbResourceOptions<T>
 ): MoltenDbResource<T> {
   const molten = inject(MoltenDbService);
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  const value = signal<T | undefined>(undefined);
+  const value = signal<T | undefined>(options?.initialValue);
   const isLoading = signal<boolean>(false);
   const error = signal<any | null>(null);
+
+  // Server (SSR/prerendering): MoltenDb never boots here, so resolve to an
+  // explicit, documented empty state — `isLoading()` false, `error()` null,
+  // `value()` at `options?.initialValue` (or `undefined` if none was given) —
+  // synchronously, with no fetch attempted and no hang.
+  if (!isBrowser) {
+    return {
+      value: value.asReadonly(),
+      isLoading: isLoading.asReadonly(),
+      error: error.asReadonly(),
+    };
+  }
 
   const fetchData = async () => {
     untracked(() => isLoading.set(true));
