@@ -1,6 +1,6 @@
 {
   "name": "@moltendb-web/angular",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Official Angular Signals wrapper for MoltenDb",
   "type": "module",
   "author": "Maximilian Both <admin@moltendb.dev>",
@@ -22,8 +22,8 @@
     "@angular/core": ">=17.0.0"
   },
   "dependencies": {
-    "@moltendb-web/core": "^2.3.0",
-    "@moltendb-web/query": "^2.3.0"
+    "@moltendb-web/core": "^2.4.0",
+    "@moltendb-web/query": "^2.4.0"
   },
   "devDependencies": {
     "@angular/common": "^17.0.0",
