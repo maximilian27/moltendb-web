@@ -34,9 +34,9 @@ describe("useMoltenDbResource (Server / SSR)", () => {
     let captured: MoltenDbResourceResult<unknown[]> | undefined;
 
     function Consumer() {
-      captured = useMoltenDbResource(
+      captured = useMoltenDbResource<unknown[]>(
         "greetings",
-        async (col) => col.get().exec(),
+        async (col) => (await col.get().exec()) as unknown[],
         { initialValue: [] }
       );
       return null;
